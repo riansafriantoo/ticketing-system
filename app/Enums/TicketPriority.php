@@ -4,28 +4,28 @@ namespace App\Enums;
 
 enum TicketPriority: string
 {
-    case Low      = 'low';
-    case Medium   = 'medium';
-    case High     = 'high';
-    case Critical = 'critical';
+    case Critical = '1';
+    case High     = '2';
+    case Medium   = '3';
+    case Low      = '4';
 
     public function label(): string
     {
         return match($this) {
-            self::Low      => 'Low',
-            self::Medium   => 'Medium',
-            self::High     => 'High',
-            self::Critical => 'Critical',
+            self::Critical => '1 (Critical)',
+            self::High     => '2 (High)',
+            self::Medium   => '3 (Medium)',
+            self::Low      => '4 (Low)',
         };
     }
 
     public function color(): string
     {
         return match($this) {
-            self::Low      => 'green',
-            self::Medium   => 'blue',
-            self::High     => 'amber',
             self::Critical => 'red',
+            self::High     => 'amber',
+            self::Medium   => 'blue',
+            self::Low      => 'green',
         };
     }
 
@@ -33,10 +33,10 @@ enum TicketPriority: string
     public function slaHours(): int
     {
         return match($this) {
-            self::Low      => (int) config('it-ticketing.sla.low', 72),
-            self::Medium   => (int) config('it-ticketing.sla.medium', 24),
-            self::High     => (int) config('it-ticketing.sla.high', 8),
             self::Critical => (int) config('it-ticketing.sla.critical', 4),
+            self::High     => (int) config('it-ticketing.sla.high', 8),
+            self::Medium   => (int) config('it-ticketing.sla.medium', 24),
+            self::Low      => (int) config('it-ticketing.sla.low', 72),
         };
     }
 

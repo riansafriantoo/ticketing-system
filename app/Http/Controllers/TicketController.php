@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TicketCategory;
+use App\Enums\TicketCaseType;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Http\Requests\StoreTicketRequest;
@@ -33,6 +34,7 @@ class TicketController extends Controller
             ->when(!$user->isAgent(), fn ($q) => $q->forRequester($user->id))
             ->when($request->filled('status'),   fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('priority'),  fn ($q) => $q->where('priority', $request->priority))
+            ->when($request->filled('requester'),  fn ($q) => $q->where('requester_id', $request->requester))
             ->when($request->filled('category'),  fn ($q) => $q->where('category', $request->category))
             ->when($request->filled('assignee'),  fn ($q) => $q->where('assignee_id', $request->assignee))
             ->when($request->filled('search'),    fn ($q) => $q->search($request->search))
@@ -47,7 +49,9 @@ class TicketController extends Controller
             'statuses'   => TicketStatus::cases(),
             'priorities' => TicketPriority::cases(),
             'categories' => TicketCategory::cases(),
+            'caseTypes'  => TicketCaseType::cases(),
             'agents'     => User::role(['agent', 'admin'])->orderBy('name')->get(),
+            'requesters' => User::orderBy('name')->get(),
             'metrics'    => $user->isAgent() ? $this->service->metrics() : null,
         ]);
     }
@@ -56,13 +60,16 @@ class TicketController extends Controller
     {
         return view('tickets.create', [
             'priorities' => TicketPriority::cases(),
+            'agents'  => User::role(['agent', 'admin', 'user'])->orderBy('name')->get(),
             'categories' => TicketCategory::cases(),
+            'caseTypes' => TicketCaseType::cases(),
         ]);
     }
 
     public function store(StoreTicketRequest $request): RedirectResponse
     {
-        $ticket = $this->service->create($request->validated(), $request->user());
+        $assignee = $request->filled('assignee_id') ? User::findOrFail($request->assignee_id) : null;
+        $ticket = $this->service->create($request->validated(), $request->user(), $assignee);
 
         return redirect()
             ->route('tickets.show', $ticket)
@@ -77,7 +84,7 @@ class TicketController extends Controller
 
         return view('tickets.show', [
             'ticket'  => $ticket,
-            'agents'  => User::role(['agent', 'admin'])->orderBy('name')->get(),
+            'agents'  => User::role(['agent', 'admin', 'user'])->orderBy('name')->get(),
             'statuses'=> $ticket->status->transitions(),
         ]);
     }
@@ -90,6 +97,7 @@ class TicketController extends Controller
             'ticket'     => $ticket,
             'priorities' => TicketPriority::cases(),
             'categories' => TicketCategory::cases(),
+            'caseTypes' => TicketCaseType::cases(),
         ]);
     }
 
@@ -123,9 +131,7 @@ class TicketController extends Controller
 
         $request->validate(['assignee_id' => 'nullable|exists:users,id']);
 
-        $assignee = $request->filled('assignee_id')
-            ? User::findOrFail($request->assignee_id)
-            : null;
+        $assignee = $request->filled('assignee_id') ? User::findOrFail($request->assignee_id) : null;
 
         $this->service->assign($ticket, $assignee, $request->user());
 

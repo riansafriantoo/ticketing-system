@@ -54,6 +54,12 @@ class Ticket extends Model
                 $ticket->priority?->slaHours() ?? TicketPriority::Medium->slaHours()
             );
         });
+
+        static::updating(function (Ticket $ticket) {
+            if ($ticket->isDirty('sla_due_at')) {
+                $ticket->sla_breached = false;
+            }
+        });
     }
 
     // ─── Relationships ────────────────────────────────────────────────────────
@@ -130,10 +136,13 @@ class Ticket extends Model
 
         return round($this->sla_due_at->diffInHours(now(), false), 1);
     }
-
+    
     public function ticketNumber(): string
     {
-        return 'TKT-' . str_pad($this->id, 5, '0', STR_PAD_LEFT);
+        $date = $this->created_at->format('ymd');
+        $sequence = str_pad($this->id, 4, '0', STR_PAD_LEFT);
+
+        return "#{$date}{$sequence}";
     }
 
     public function canTransitionTo(TicketStatus $newStatus): bool

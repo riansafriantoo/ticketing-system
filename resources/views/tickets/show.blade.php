@@ -13,17 +13,10 @@
         {{-- Ticket body --}}
         <div class="bg-white rounded-xl border border-gray-100 p-5">
             <div class="flex items-center gap-2 mb-4">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium badge-{{ $ticket->status->value }}">
-                    {{ $ticket->status->label() }}
-                </span>
-                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium badge-{{ $ticket->priority->value }}">
-                    {{ $ticket->priority->label() }}
-                </span>
-                <span class="text-xs text-gray-400 capitalize">{{ $ticket->category->label() }}</span>
                 @if($ticket->isOverdue())
-                <span class="ml-auto inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-600 rounded-md text-[11px] font-medium">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-600 rounded-md text-[11px] font-medium">
                     <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    SLA Breached
+                    Overdue SLA
                 </span>
                 @endif
             </div>
@@ -60,7 +53,7 @@
                     <div class="flex items-center gap-2">
                         <img src="{{ $comment->user->avatarUrl() }}" class="w-6 h-6 rounded-full" alt="">
                         <span class="text-xs font-medium text-gray-700">{{ $comment->user->name }}</span>
-                        <span class="text-xs text-gray-400">{{ $comment->created_at->diffForHumans() }}</span>
+                        <span class="text-xs text-gray-400">{{ $comment->created_at }}</span>
                         @if($comment->is_internal)
                         <span class="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-medium rounded">Internal Note</span>
                         @endif
@@ -108,6 +101,11 @@
             </form>
         </div>
         @endif
+        <a href="{{ route('tickets.index') }}"
+            class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 font-medium hover:bg-gray-50">
+            <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            All Tickets
+        </a>
     </div>
 
     {{-- ── Sidebar ───────────────────────────────────────────────────────────── --}}
@@ -123,6 +121,24 @@
                     <div class="flex items-center gap-1">
                         <img src="{{ $ticket->requester->avatarUrl() }}" class="w-4 h-4 rounded-full" alt="">
                         <span class="text-gray-700">{{ $ticket->requester->name }}</span>
+                    </div>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Status</span>
+                    <div class="flex items-center gap-1">
+                        <span class="text-gray-700">{{ $ticket->status->label() }}</span>
+                    </div>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Category</span>
+                    <div class="flex items-center gap-1">
+                        <span class="text-gray-700"> {{ $ticket->category->label() }}</span>
+                    </div>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Priority</span>
+                    <div class="flex items-center gap-1">
+                        <span class="text-gray-700"> {{ $ticket->priority->label() }}</span>
                     </div>
                 </div>
                 <div class="flex justify-between">
@@ -150,18 +166,26 @@
         @if($ticket->status->transitions() && !$ticket->status->isTerminal())
         <div class="bg-white rounded-xl border border-gray-100 p-4">
             <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Change Status</p>
-            <div class="space-y-1.5">
-                @foreach($ticket->status->transitions() as $nextStatus)
-                <form method="POST" action="{{ route('tickets.transition', $ticket) }}">
-                    @csrf
-                    <input type="hidden" name="status" value="{{ $nextStatus->value }}">
-                    <button type="submit"
-                            class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium border hover:border-gray-300 hover:bg-gray-50 transition-colors badge-{{ $nextStatus->value }} border-transparent">
-                        → {{ $nextStatus->label() }}
-                    </button>
-                </form>
-                @endforeach
+            <div class="relative">
+                <select id="status-dropdown" class="w-full appearance-none px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 bg-white text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-colors cursor-pointer pr-8" onchange="document.getElementById('status-form').querySelector('input[name=status]').value = this.value; document.getElementById('status-form').submit();">
+                    <option value="" disabled selected>→ Pilih status...</option>
+                    @foreach($ticket->status->transitions() as $nextStatus)
+                    <option value="{{ $nextStatus->value }}">{{ $nextStatus->label() }}</option>
+                    @endforeach
+                </select>
+                {{-- Chevron icon --}}
+                <div class="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </div>
             </div>
+
+            {{-- Single hidden form --}}
+            <form id="status-form" method="POST" action="{{ route('tickets.transition', $ticket) }}">
+                @csrf
+                <input type="hidden" name="status" value="">
+            </form>
         </div>
         @endif
 
@@ -199,7 +223,7 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-600 leading-relaxed">{!! $activity->description() !!}</p>
-                        <p class="text-[10px] text-gray-400 mt-0.5">{{ $activity->created_at->diffForHumans() }}</p>
+                        <p class="text-[10px] text-gray-400 mt-0.5">{{ $activity->created_at }}</p>
                     </div>
                 </div>
                 @empty

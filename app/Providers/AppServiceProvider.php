@@ -3,8 +3,11 @@
 namespace App\Providers;
 
 use App\Models\Comment;
+use App\Models\Asset;
 use App\Models\Ticket;
 use App\Policies\CommentPolicy;
+use App\Policies\AssetPolicy;
+use App\Services\AssetService;
 use App\Policies\TicketPolicy;
 use App\Services\NotificationService;
 use App\Services\TicketService;
@@ -19,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Bind services as singletons
         $this->app->singleton(NotificationService::class);
+        $this->app->singleton(AssetService::class);
         $this->app->singleton(TicketService::class, function ($app) {
             return new TicketService($app->make(NotificationService::class));
         });
@@ -32,5 +36,6 @@ class AppServiceProvider extends ServiceProvider
         // Register policies
         Gate::policy(Ticket::class, TicketPolicy::class);
         Gate::policy(Comment::class, CommentPolicy::class);
+        Gate::policy(Asset::class, AssetPolicy::class);
     }
 }

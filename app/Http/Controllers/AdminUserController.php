@@ -2,62 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\TicketPriority;
-use App\Enums\TicketStatus;
-use App\Models\Ticket;
 use App\Models\User;
-use App\Services\TicketService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Services\TicketService;
 
-class AdminController extends Controller
+class AdminUserController extends Controller
 {
     use AuthorizesRequests;
     
     public function __construct(
         private readonly TicketService $service
-    ) {}
+    ) {}   
 
-    public function dashboard(): View
-    {
-        $metrics = $this->service->metrics();
-
-        $byStatus = Ticket::selectRaw('status, COUNT(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status');
-
-        $byPriority = Ticket::selectRaw('priority, COUNT(*) as count')
-            ->whereNotIn('status', [TicketStatus::Closed])
-            ->groupBy('priority')
-            ->pluck('count', 'priority');
-
-        $agentLoad = User::role(['agent', 'admin'])
-            ->withCount(['assignedTickets as open_count' => function ($q) {
-                $q->whereNotIn('status', [TicketStatus::Resolved->value, TicketStatus::Closed->value]);
-            }])
-            ->orderByDesc('open_count')
-            ->take(10)
-            ->get();
-
-        $recentTickets = Ticket::with(['requester', 'assignee'])
-            ->latest()
-            ->take(10)
-            ->get();
-            
-
-        return view('admin.dashboard', compact(
-            'metrics', 'byStatus', 'byPriority', 'agentLoad', 'recentTickets'
-        ));
-    }
+    // ── List all users ────────────────────────────────────────────────────────
 
     public function index(Request $request): View
     {
-        $users = User::with('roles')
+        $query = User::with('roles')
             ->withCount(['submittedTickets', 'assignedTickets'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
@@ -74,42 +41,17 @@ class AdminController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        $overdueTickets = Ticket::overdue()->get();
-
-        return view('admin.users', [
-            'users' => $users,
+        return view('admin.users.index', [
+            'users' => $query,
             'roles' => Role::orderBy('name')->get(),
-            'overdueTickets' => $overdueTickets,
         ]);
     }
+
+    // ── Show create form ──────────────────────────────────────────────────────
 
     public function create(): View
     {
-        return view('admin.create', [
-            'roles' => Role::orderBy('name')->get(),
-        ]);
-    }
-
-    public function show(User $user): View
-    {
-        $user->load('roles')
-             ->loadCount(['submittedTickets', 'assignedTickets']);
-
-        $recentTickets = $user->submittedTickets()
-            ->with('assignee')
-            ->latest()
-            ->take(5)
-            ->get();
-
-        return view('admin.show', compact('user', 'recentTickets'));
-    }
-
-    // ── Show edit form ────────────────────────────────────────────────────────
-
-    public function edit(User $user): View
-    {
-        return view('admin.edit', [
-            'user'  => $user->load('roles'),
+        return view('admin.users.create', [
             'roles' => Role::orderBy('name')->get(),
         ]);
     }
@@ -146,6 +88,31 @@ class AdminController extends Controller
             ->with('success', "User \"{$user->name}\" created successfully.");
     }
 
+    // ── Show single user ──────────────────────────────────────────────────────
+
+    public function show(User $user): View
+    {
+        $user->load('roles')
+             ->loadCount(['submittedTickets', 'assignedTickets']);
+
+        $recentTickets = $user->submittedTickets()
+            ->with('assignee')
+            ->latest()
+            ->take(5)
+            ->get();
+
+        return view('admin.users.show', compact('user', 'recentTickets'));
+    }
+
+    // ── Show edit form ────────────────────────────────────────────────────────
+
+    public function edit(User $user): View
+    {
+        return view('admin.users.edit', [
+            'user'  => $user->load('roles'),
+            'roles' => Role::orderBy('name')->get(),
+        ]);
+    }
 
     // ── Update user ───────────────────────────────────────────────────────────
 
@@ -206,13 +173,5 @@ class AdminController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('success', "User \"{$name}\" deleted.");
-    }
-
-    public function updateUserRole(Request $request, User $user): \Illuminate\Http\RedirectResponse
-    {
-        $request->validate(['role' => 'required|in:user,agent,admin']);
-        $user->syncRoles([$request->role]);
-
-        return back()->with('success', "Role updated to {$request->role}.");
     }
 }

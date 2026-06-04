@@ -22,14 +22,16 @@ class TicketService
 
     // ─── Create ───────────────────────────────────────────────────────────────
 
-    public function create(array $data, User $requester): Ticket
+    public function create(array $data, User $requester, ?User $assignee): Ticket
     {
-        return DB::transaction(function () use ($data, $requester) {
+
+        return DB::transaction(function () use ($data, $requester, $assignee) {
             $ticket = Ticket::create([
                 ...$data,
                 'requester_id' => $requester->id,
+                'assignee_id' => $assignee?->id,
             ]);
-
+            
             $this->logActivity($ticket, $requester, 'created');
 
             // Store attachments
@@ -161,6 +163,7 @@ class TicketService
     {
         return [
             'total_open'     => Ticket::whereNotIn('status', [TicketStatus::Resolved, TicketStatus::Closed])->count(),
+            'total_tickets'  => Ticket::count(),
             'overdue'        => Ticket::overdue()->count(),
             'resolved_today' => Ticket::whereDate('resolved_at', today())->count(),
             'avg_resolution' => $this->avgResolutionHours(),

@@ -59,6 +59,15 @@
             @endforeach
         </select>
 
+        <select name="requester" class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-400 bg-white">
+            <option value="">All requesters</option>
+            @foreach($requesters as $requester)
+            <option value="{{ $requester->id }}" {{ request('requester') == $requester->id ? 'selected' : '' }}>
+                {{ $requester->name }}
+            </option>
+            @endforeach
+        </select>
+
         @if(auth()->user()->isAgent())
         <select name="assignee" class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-400 bg-white">
             <option value="">All agents</option>
@@ -104,14 +113,14 @@
                 <tr class="border-b border-gray-100">
                     <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-28">ID</th>
                     <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Subject</th>
-                    <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-28">Status</th>
-                    <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-24">Priority</th>
+                    <th class="text-left px-2 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-28">Status</th>
+                    <th class="text-left px-2 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-24">Priority</th>
                     @if(auth()->user()->isAgent())
                     <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36">Requester</th>
                     <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36">Assignee</th>
                     @endif
                     <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36">SLA</th>
-                    <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-28">Created</th>
+                    <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-28">Created Date</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
@@ -131,13 +140,13 @@
                             </div>
                         </div>
                     </td>
-                    <td class="px-4 py-3">
+                    <td class="px-2 py-2">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium badge-{{ $ticket->status->value }}">
                             {{ $ticket->status->label() }}
                         </span>
                     </td>
-                    <td class="px-4 py-3">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium badge-{{ $ticket->priority->value }}">
+                    <td class="px-2 py-2">
+                        <span class="inline-flex items-left px-2 py-0.5 rounded-md text-[11px] font-medium badge-{{ $ticket->priority->value }}">
                             {{ $ticket->priority->label() }}
                         </span>
                     </td>
@@ -171,19 +180,19 @@
                         @endif
                     </td>
                     <td class="px-4 py-3">
-                        <span class="text-xs text-gray-400">{{ $ticket->created_at->diffForHumans(null, true) }}</span>
+                        <span class="text-xs text-gray-400">{{ $ticket->created_at }}</span>
                     </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
 
-        {{-- Pagination --}}
-        @if($tickets->hasPages())
-        <div class="px-4 py-3 border-t border-gray-100">
-            {{ $tickets->links('vendor.pagination.simple-tailwind') }}
-        </div>
-        @endif
+            {{-- Pagination --}}
+            @if($tickets->hasPages())
+            <div class="px-4 py-3 border-t border-gray-100">
+                {{ $tickets->links('vendor.pagination.simple-tailwind') }}
+            </div>
+            @endif
         @endif
     </div>
 </div>
