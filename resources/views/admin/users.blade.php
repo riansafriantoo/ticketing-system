@@ -5,7 +5,7 @@
 @section('subheading', $users->total() . ' registered users')
 
 @section('header-actions')
-<a href="{{ route('admin.users.create') }}"
+<a href="{{ route('users.create') }}"
    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-700">
     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
@@ -44,7 +44,7 @@
         </button>
 
         @if(request()->hasAny(['search', 'role', 'status']))
-        <a href="{{ route('admin.users.index') }}"
+        <a href="{{ route('users.index') }}"
            class="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg">
             Clear
         </a>
@@ -63,7 +63,7 @@
             <p class="text-sm font-medium text-gray-500">No users found</p>
             <p class="text-xs text-gray-400 mt-1">
                 Try adjusting your filters or
-                <a href="{{ route('admin.users.create') }}" class="text-brand-600 underline">add a new user</a>
+                <a href="{{ route('users.create') }}" class="text-brand-600 underline">add a new user</a>
             </p>
         </div>
         @else
@@ -132,7 +132,7 @@
                     <td class="px-4 py-3">
                         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {{-- View --}}
-                            <a href="{{ route('admin.users.show', $user) }}"
+                            <a href="{{ route('users.show', $user) }}"
                                title="View"
                                class="p-1.5 rounded-md text-gray-400 hover:text-brand-600 hover:bg-brand-50">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -142,7 +142,7 @@
                             </a>
 
                             {{-- Edit --}}
-                            <a href="{{ route('admin.users.edit', $user) }}"
+                            <a href="{{ route('users.edit', $user) }}"
                                title="Edit"
                                class="p-1.5 rounded-md text-gray-400 hover:text-amber-600 hover:bg-amber-50">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -152,7 +152,7 @@
 
                             {{-- Toggle active --}}
                             @if($user->id !== auth()->id())
-                            <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}">
+                            <form method="POST" action="{{ route('users.toggle-status', $user) }}">
                                 @csrf @method('PATCH')
                                 <button type="submit"
                                         title="{{ $user->is_active ? 'Deactivate' : 'Activate' }}"
@@ -170,7 +170,7 @@
                             </form>
 
                             {{-- Delete --}}
-                            <form method="POST" action="{{ route('admin.users.destroy', $user) }}"
+                            <form method="POST" action="{{ route('users.destroy', $user) }}"
                                   onsubmit="return confirm('Delete {{ addslashes($user->name) }}? This cannot be undone.')">
                                 @csrf @method('DELETE')
                                 <button type="submit"

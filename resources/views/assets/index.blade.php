@@ -26,11 +26,10 @@
             ['label'=>'Available',         'value'=>number_format($metrics['unassigned']),      'color'=>'text-blue-600',  'bg'=>'bg-white'],
             ['label'=>'Under Repair',      'value'=>number_format($metrics['under_repair']),    'color'=>'text-amber-600', 'bg'=>'bg-white'],
             ['label'=>'Warranty Expiring', 'value'=>number_format($metrics['warranty_expiring']),'color'=>'text-red-600',  'bg'=>'bg-white'],
-            ['label'=>'Total Value',       'value'=>'$'.number_format($metrics['total_value'],0),'color'=>'text-purple-700','bg'=>'bg-white'],
         ];
         @endphp
         @foreach($cards as $card)
-        <div class="{{ $card['bg'] }} rounded-xl border border-gray-100 px-4 py-3">
+        <div class="{{ $card['bg'] }} rounded-xl border border-gray-100 px-5 py-3">
             <p class="text-[11px] text-gray-400 font-medium">{{ $card['label'] }}</p>
             <p class="text-xl font-semibold {{ $card['color'] }} mt-0.5">{{ $card['value'] }}</p>
         </div>

@@ -6,7 +6,7 @@
 
 @section('content')
 <div class="max-w-2xl">
-    <form method="POST" action="{{ route('admin.users.store') }}" class="space-y-5" id="create-user-form">
+    <form method="POST" action="{{ route('users.store') }}" class="space-y-5" id="create-user-form">
         @csrf
 
         {{-- ── Personal Information ────────────────────────────────────────── --}}
@@ -212,7 +212,7 @@
 
         {{-- ── Submit ───────────────────────────────────────────────────────── --}}
         <div class="flex items-center justify-between">
-            <a href="{{ route('admin.users.index') }}"
+            <a href="{{ route('users.index') }}"
                class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
                 ← Cancel
             </a>

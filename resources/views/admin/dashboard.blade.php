@@ -8,7 +8,7 @@
 <div class="space-y-6">
 
     {{-- ── Metric cards ─────────────────────────────────────────────────────── --}}
-    <div class="grid grid-cols-5 gap-4">
+    <div class="grid grid-cols-4 gap-4">
         <div class="bg-white rounded-xl border border-gray-100 p-4">
             <p class="text-xs text-blue-400 mb-1">Total tickets</p>
             <p class="text-2xl font-semibold text-gray-900">{{ $metrics['total_tickets'] }}</p>
@@ -30,14 +30,6 @@
             <p class="text-xs text-green-600 mb-1">Resolved today</p>
             <p class="text-2xl font-semibold text-green-600">{{ $metrics['resolved_today'] }}</p>
             <p class="text-xs text-gray-400 mt-1">Tickets closed</p>
-        </div>
-        <div class="bg-white rounded-xl border border-gray-100 p-4">
-            <p class="text-xs text-gray-400 mb-1">Avg resolution</p>
-            <p class="text-2xl font-semibold text-gray-900">
-                {{ $metrics['avg_resolution'] <= 0 ? '<0' : $metrics['avg_resolution'] }}
-                <span class="text-sm font-normal text-gray-400">h</span>
-            </p>
-            <p class="text-xs text-gray-400 mt-1">All time average</p>
         </div>
     </div>
 

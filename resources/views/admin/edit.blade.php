@@ -6,7 +6,7 @@
 
 @section('content')
 <div class="max-w-2xl">
-    <form method="POST" action="{{ route('admin.users.update', $user) }}" class="space-y-5">
+    <form method="POST" action="{{ route('users.update', $user) }}" class="space-y-5">
         @csrf @method('PUT')
 
         {{-- ── Personal Information ─────────────────────────────────────────── --}}
@@ -125,12 +125,12 @@
 
         {{-- ── Actions ──────────────────────────────────────────────────────── --}}
         <div class="flex items-center justify-between">
-            <a href="{{ route('admin.users.index') }}"
+            <a href="{{ route('users.index') }}"
                class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
                 ← Back to Users
             </a>
             <div class="flex items-center gap-2">
-                <a href="{{ route('admin.users.show', $user) }}"
+                <a href="{{ route('users.show', $user) }}"
                    class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
                     View Profile
                 </a>

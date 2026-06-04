@@ -39,7 +39,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
     // ── Admin ─────────────────────────────────────────────────────────────────
-    Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::resource('admin', AdminController::class);
 
         // ── Assets ─────────────────────────────────────────
