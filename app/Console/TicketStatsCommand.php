@@ -19,9 +19,8 @@ class TicketStatsCommand extends Command
         $this->table(
             ['Metric', 'Count'],
             [
-                ['Total open',       Ticket::whereNotIn('status', [TicketStatus::Resolved->value, TicketStatus::Closed->value])->count()],
+                ['Total open',       Ticket::whereNotIn('status', [TicketStatus::Resolved->value])->count()],
                 ['In progress',      Ticket::where('status', TicketStatus::InProgress)->count()],
-                ['On hold',          Ticket::where('status', TicketStatus::OnHold)->count()],
                 ['Overdue (SLA)',     Ticket::overdue()->count()],
                 ['Resolved today',   Ticket::whereDate('resolved_at', today())->count()],
                 ['Total all time',   Ticket::count()],

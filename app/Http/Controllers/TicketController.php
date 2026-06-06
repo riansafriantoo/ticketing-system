@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\TicketCategory;
 use App\Enums\TicketCaseType;
 use App\Enums\TicketPriority;
+use App\Enums\TicketPriorityRequester;
 use App\Enums\TicketStatus;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
@@ -30,8 +31,9 @@ class TicketController extends Controller
     {
         $user = $request->user();
 
+        $selectedDepartment = $user->department;
         $query = Ticket::with(['requester', 'assignee'])
-            ->when(!$user->isAgent(), fn ($q) => $q->forRequester($user->id))
+            // ->when(!$user->isAgent(), fn ($q) => $q->forRequester($user->id))
             ->when($request->filled('status'),   fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('priority'),  fn ($q) => $q->where('priority', $request->priority))
             ->when($request->filled('requester'),  fn ($q) => $q->where('requester_id', $request->requester))
@@ -39,6 +41,11 @@ class TicketController extends Controller
             ->when($request->filled('assignee'),  fn ($q) => $q->where('assignee_id', $request->assignee))
             ->when($request->filled('search'),    fn ($q) => $q->search($request->search))
             ->when($request->boolean('overdue'),  fn ($q) => $q->overdue())
+            ->when(filled($selectedDepartment),   fn ($q) => $q
+                ->join('users', 'tickets.requester_id', '=', 'users.id')
+                ->where('users.department', $selectedDepartment)
+                ->select('tickets.*')
+            )
             ->latest();
 
         $tickets = $query->paginate(config('it-ticketing.tickets_per_page', 20))
@@ -48,6 +55,7 @@ class TicketController extends Controller
             'tickets'    => $tickets,
             'statuses'   => TicketStatus::cases(),
             'priorities' => TicketPriority::cases(),
+            'prioritiesRequester' => TicketPriorityRequester::cases(),
             'categories' => TicketCategory::cases(),
             'caseTypes'  => TicketCaseType::cases(),
             'agents'     => User::role(['agent', 'admin'])->orderBy('name')->get(),
@@ -60,31 +68,44 @@ class TicketController extends Controller
     {
         return view('tickets.create', [
             'priorities' => TicketPriority::cases(),
-            'agents'  => User::role(['agent', 'admin', 'user'])->orderBy('name')->get(),
+            'prioritiesRequester' => TicketPriorityRequester::cases(),
+            'agents'  => User::role(['agent', 'admin'])->orderBy('name')->get(),
             'categories' => TicketCategory::cases(),
             'caseTypes' => TicketCaseType::cases(),
         ]);
     }
 
-    public function store(StoreTicketRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
+        $validated = $request->validate([
+            'subject'       => 'required|string|max:255',
+            'description'   => 'required|string|max:20000',
+            'priority'      => 'required|in:' . implode(',', \App\Enums\TicketPriority::values()),
+            'category'      => 'required|in:' . implode(',', \App\Enums\TicketCategory::values()),
+            'asset_id'      => 'nullable|exists:assets,id',
+            'attachments'   => 'nullable|array|max:5',
+            'attachments.*' => 'file|max:10240',
+        ]);
+ 
+        $ticketFields = array_diff_key($validated, array_flip(['attachments']));
+        $ticketFields['attachments'] = $request->file('attachments', []);
         $assignee = $request->filled('assignee_id') ? User::findOrFail($request->assignee_id) : null;
-        $ticket = $this->service->create($request->validated(), $request->user(), $assignee);
-
-        return redirect()
-            ->route('tickets.show', $ticket)
-            ->with('success', "Ticket #{$ticket->ticketNumber()} created successfully.");
+ 
+        $ticket = $this->service->create($ticketFields, $request->user(), $assignee);
+ 
+        return redirect()->route('tickets.show', $ticket)
+            ->with('success', "Ticket {$ticket->ticketNumber()} created successfully.");
     }
 
     public function show(Ticket $ticket): View
     {
-        $this->authorize('view', $ticket);
+        // $this->authorize('view', $ticket);
 
         $ticket->load(['requester', 'assignee', 'comments.user', 'attachments.user', 'activities.user']);
 
         return view('tickets.show', [
             'ticket'  => $ticket,
-            'agents'  => User::role(['agent', 'admin', 'user'])->orderBy('name')->get(),
+            'agents'  => User::role(['agent', 'admin'])->orderBy('name')->get(),
             'statuses'=> $ticket->status->transitions(),
         ]);
     }
@@ -96,6 +117,7 @@ class TicketController extends Controller
         return view('tickets.edit', [
             'ticket'     => $ticket,
             'priorities' => TicketPriority::cases(),
+            'prioritiesRequester' => TicketPriorityRequester::cases(),
             'categories' => TicketCategory::cases(),
             'caseTypes' => TicketCaseType::cases(),
         ]);

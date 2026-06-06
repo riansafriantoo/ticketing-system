@@ -20,7 +20,7 @@ class CheckSlaBreaches implements ShouldQueue
     public function handle(NotificationService $notifier): void
     {
         // Find newly breached tickets (breached but not yet flagged)
-        $breached = Ticket::whereNotIn('status', [TicketStatus::Resolved->value, TicketStatus::Closed->value])
+        $breached = Ticket::whereNotIn('status', [TicketStatus::Resolved->value])
             ->where('sla_due_at', '<', now())
             ->where('sla_breached', false)
             ->with(['requester', 'assignee'])
@@ -47,7 +47,7 @@ class CheckSlaBreaches implements ShouldQueue
         }
 
         // Find tickets approaching SLA (within 1 hour, not yet breached)
-        $warning = Ticket::whereNotIn('status', [TicketStatus::Resolved->value, TicketStatus::Closed->value])
+        $warning = Ticket::whereNotIn('status', [TicketStatus::Resolved->value])
             ->where('sla_due_at', '>', now())
             ->where('sla_due_at', '<=', now()->addHour())
             ->where('sla_breached', false)

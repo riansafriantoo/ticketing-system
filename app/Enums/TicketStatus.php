@@ -41,11 +41,11 @@ enum TicketStatus: string
     public function transitions(): array
     {
         return match($this) {
-            self::Open       => [self::InProgress, self::OnHold, self::Closed],
-            self::InProgress => [self::OnHold, self::Resolved, self::Closed],
+            self::Open       => [self::InProgress, self::Closed],
+            self::InProgress => [self::Open, self::Closed],
             self::OnHold     => [self::InProgress, self::Closed],
             self::Resolved   => [self::Closed, self::Open],
-            self::Closed     => [self::Open],
+            self::Closed     => [self::InProgress, self::Open],
         };
     }
 

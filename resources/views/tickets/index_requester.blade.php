@@ -77,12 +77,13 @@
             </option>
             @endforeach
         </select>
+        @endif
+
         <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
             <input type="checkbox" name="overdue" value="1" {{ request('overdue') ? 'checked' : '' }}
                    class="rounded border-gray-300 text-brand-600 focus:ring-brand-300">
             Overdue only
         </label>
-        @endif
 
         <button type="submit"
                 class="px-3 py-1.5 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700">
@@ -115,10 +116,10 @@
                     <th class="text-left px-2 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-28">Status</th>
                     <th class="text-left px-2 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-24">Priority</th>
                     @if(auth()->user()->isAgent())
-                        <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36">Requester</th>
-                        <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36">Assignee</th>
-                        <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36">SLA</th>
+                    <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36">Requester</th>
+                    <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36">Assignee</th>
                     @endif
+                    <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36">SLA</th>
                     <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-28">Created Date</th>
                 </tr>
             </thead>
@@ -130,6 +131,9 @@
                     </td>
                     <td class="px-4 py-3">
                         <div class="flex items-start gap-2">
+                            @if($ticket->isOverdue())
+                            <span title="SLA Breached" class="mt-0.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                            @endif
                             <div>
                                 <p class="text-sm font-medium text-gray-900 line-clamp-1">{{ $ticket->subject }}</p>
                                 <p class="text-xs text-gray-400 capitalize">{{ $ticket->category->label() }}</p>
@@ -147,34 +151,34 @@
                         </span>
                     </td>
                     @if(auth()->user()->isAgent())
-                        <td class="px-4 py-3">
-                            <div class="flex items-center gap-1.5">
-                                <img src="{{ $ticket->requester->avatarUrl() }}" class="w-5 h-5 rounded-full" alt="">
-                                <span class="text-xs text-gray-600 truncate max-w-[100px]">{{ $ticket->requester->name }}</span>
-                            </div>
-                        </td>
-                        <td class="px-4 py-3">
-                            @if($ticket->assignee)
-                            <div class="flex items-center gap-1.5">
-                                <img src="{{ $ticket->assignee->avatarUrl() }}" class="w-5 h-5 rounded-full" alt="">
-                                <span class="text-xs text-gray-600 truncate max-w-[100px]">{{ $ticket->assignee->name }}</span>
-                            </div>
-                            @else
-                            <span class="text-xs text-gray-300 italic">Unassigned</span>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3">
-                            @if($ticket->sla_due_at && !$ticket->status->isTerminal())
-                                @if($ticket->isOverdue())
-                                <span class="text-xs font-medium text-red-600">Overdue</span>
-                                @else
-                                <span class="text-xs text-gray-500">{{ $ticket->sla_due_at->diffForHumans() }}</span>
-                                @endif
-                            @else
-                            <span class="text-xs text-gray-300">—</span>
-                            @endif
-                        </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-1.5">
+                            <img src="{{ $ticket->requester->avatarUrl() }}" class="w-5 h-5 rounded-full" alt="">
+                            <span class="text-xs text-gray-600 truncate max-w-[100px]">{{ $ticket->requester->name }}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3">
+                        @if($ticket->assignee)
+                        <div class="flex items-center gap-1.5">
+                            <img src="{{ $ticket->assignee->avatarUrl() }}" class="w-5 h-5 rounded-full" alt="">
+                            <span class="text-xs text-gray-600 truncate max-w-[100px]">{{ $ticket->assignee->name }}</span>
+                        </div>
+                        @else
+                        <span class="text-xs text-gray-300 italic">Unassigned</span>
+                        @endif
+                    </td>
                     @endif
+                    <td class="px-4 py-3">
+                        @if($ticket->sla_due_at && !$ticket->status->isTerminal())
+                            @if($ticket->isOverdue())
+                            <span class="text-xs font-medium text-red-600">Overdue</span>
+                            @else
+                            <span class="text-xs text-gray-500">{{ $ticket->sla_due_at->diffForHumans() }}</span>
+                            @endif
+                        @else
+                        <span class="text-xs text-gray-300">—</span>
+                        @endif
+                    </td>
                     <td class="px-4 py-3">
                         <span class="text-xs text-gray-400">{{ $ticket->created_at }}</span>
                     </td>

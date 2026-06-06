@@ -108,7 +108,7 @@ class Ticket extends Model
 
     public function scopeOverdue(Builder $q): Builder
     {
-        return $q->whereNotIn('status', [TicketStatus::Resolved, TicketStatus::Closed])
+        return $q->whereNotIn('status', [TicketStatus::Resolved])
                  ->where('sla_due_at', '<', now());
     }
 

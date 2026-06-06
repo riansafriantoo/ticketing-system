@@ -23,36 +23,53 @@ class AdminController extends Controller
         private readonly TicketService $service
     ) {}
 
-    public function dashboard(): View
+    public function dashboard(Request $request): View
     {
+        $user = $request->user();
         $metrics = $this->service->metrics();
-
+        $metricsRequester = $this->service->metricsRequester($user);
+        
         $byStatus = Ticket::selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->pluck('count', 'status');
 
         $byPriority = Ticket::selectRaw('priority, COUNT(*) as count')
-            ->whereNotIn('status', [TicketStatus::Closed])
+            ->whereNotIn('status', [TicketStatus::Resolved])
             ->groupBy('priority')
             ->pluck('count', 'priority');
 
         $agentLoad = User::role(['agent', 'admin'])
             ->withCount(['assignedTickets as open_count' => function ($q) {
-                $q->whereNotIn('status', [TicketStatus::Resolved->value, TicketStatus::Closed->value]);
+                $q->whereNotIn('status', [TicketStatus::Resolved->value]);
             }])
             ->orderByDesc('open_count')
             ->take(10)
             ->get();
 
+        $selectedDepartment = $user->department;
+ 
         $recentTickets = Ticket::with(['requester', 'assignee'])
-            ->latest()
+            ->when(
+                filled($selectedDepartment),
+                fn ($q) => $q
+                    ->join('users', 'tickets.requester_id', '=', 'users.id')
+                    ->where('users.department', $selectedDepartment)
+                    ->select('tickets.*')
+            )
+            ->latest('tickets.created_at')
             ->take(10)
             ->get();
-            
+                    
 
-        return view('admin.dashboard', compact(
-            'metrics', 'byStatus', 'byPriority', 'agentLoad', 'recentTickets'
-        ));
+        if(auth()->user()->isAgent()) {
+            return view('admin.dashboard', compact(
+                'metrics', 'byStatus', 'byPriority', 'agentLoad', 'recentTickets', 'selectedDepartment'
+            ));
+        }else{
+            return view('admin.dashboard_requester', compact(
+                'metricsRequester', 'byStatus', 'byPriority', 'agentLoad', 'recentTickets', 'selectedDepartment'
+            ));
+        }
     }
 
     public function index(Request $request): View
@@ -142,7 +159,7 @@ class AdminController extends Controller
         $user->assignRole($data['role']);
 
         return redirect()
-            ->route('admin.users.index')
+            ->route('users.index')
             ->with('success', "User \"{$user->name}\" created successfully.");
     }
 
@@ -173,7 +190,7 @@ class AdminController extends Controller
         $user->syncRoles([$data['role']]);
 
         return redirect()
-            ->route('admin.users.index')
+            ->route('users.index')
             ->with('success', "User \"{$user->name}\" updated successfully.");
     }
 
@@ -204,7 +221,7 @@ class AdminController extends Controller
         $user->delete();
 
         return redirect()
-            ->route('admin.users.index')
+            ->route('users.index')
             ->with('success', "User \"{$name}\" deleted.");
     }
 

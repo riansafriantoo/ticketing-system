@@ -145,14 +145,14 @@
                     <span class="text-gray-400">Opened</span>
                     <span class="text-gray-700">{{ $ticket->created_at->format('M d, Y H:i') }}</span>
                 </div>
-                @if($ticket->sla_due_at)
+                {{-- @if($ticket->sla_due_at)
                 <div class="flex justify-between">
                     <span class="text-gray-400">SLA due</span>
                     <span class="{{ $ticket->isOverdue() ? 'text-red-600 font-medium' : 'text-gray-700' }}">
                         {{ $ticket->sla_due_at->format('M d, Y H:i') }}
                     </span>
                 </div>
-                @endif
+                @endif --}}
                 @if($ticket->resolved_at)
                 <div class="flex justify-between">
                     <span class="text-gray-400">Resolved</span>
@@ -163,40 +163,41 @@
         </div>
 
         {{-- Status transition --}}
-        @if($ticket->status->transitions() && !$ticket->status->isTerminal())
-        <div class="bg-white rounded-xl border border-gray-100 p-4">
-            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Change Status</p>
-            <div class="relative">
-                <select id="status-dropdown" class="w-full appearance-none px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 bg-white text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-colors cursor-pointer pr-8" onchange="document.getElementById('status-form').querySelector('input[name=status]').value = this.value; document.getElementById('status-form').submit();">
-                    <option value="" disabled selected>→ Pilih status...</option>
-                    @foreach($ticket->status->transitions() as $nextStatus)
-                    <option value="{{ $nextStatus->value }}">{{ $nextStatus->label() }}</option>
-                    @endforeach
-                </select>
-                {{-- Chevron icon --}}
-                <div class="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
+        @if(auth()->user()->isAgent())
+            @if($ticket->status->transitions() && !$ticket->status->isTerminal())
+            <div class="bg-white rounded-xl border border-gray-100 p-4">
+                <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Change Status</p>
+                <div class="relative">
+                    <select id="status-dropdown" class="w-full appearance-none px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 bg-white text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-colors cursor-pointer pr-8" onchange="document.getElementById('status-form').querySelector('input[name=status]').value = this.value; document.getElementById('status-form').submit();">
+                        <option value="" disabled selected>Pilih status...</option>
+                        @foreach($ticket->status->transitions() as $nextStatus)
+                        <option value="{{ $nextStatus->value }}">{{ $nextStatus->label() }}</option>
+                        @endforeach
+                    </select>
+                    {{-- Chevron icon --}}
+                    <div class="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
                 </div>
-            </div>
 
-            {{-- Single hidden form --}}
-            <form id="status-form" method="POST" action="{{ route('tickets.transition', $ticket) }}">
-                @csrf
-                <input type="hidden" name="status" value="">
-            </form>
-        </div>
+                {{-- Single hidden form --}}
+                <form id="status-form" method="POST" action="{{ route('tickets.transition', $ticket) }}">
+                    @csrf
+                    <input type="hidden" name="status" value="">
+                </form>
+            </div>
+            @endif
         @endif
 
         {{-- Assign (agents only) --}}
         @can('assign', $ticket)
         <div class="bg-white rounded-xl border border-gray-100 p-4">
-            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Assignee</p>
+            <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Agent</p>
             <form method="POST" action="{{ route('tickets.assign', $ticket) }}" class="space-y-2">
                 @csrf
-                <select name="assignee_id"
-                        class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-brand-400 bg-white">
+                <select name="assignee_id" class="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-brand-400 bg-white">
                     <option value="">Unassigned</option>
                     @foreach($agents as $agent)
                     <option value="{{ $agent->id }}" {{ $ticket->assignee_id == $agent->id ? 'selected' : '' }}>
@@ -204,9 +205,8 @@
                     </option>
                     @endforeach
                 </select>
-                <button type="submit"
-                        class="w-full px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    Update Assignee
+                <button type="submit" class="w-full px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    Update Agent
                 </button>
             </form>
         </div>

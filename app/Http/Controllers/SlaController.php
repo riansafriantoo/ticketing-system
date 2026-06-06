@@ -21,7 +21,6 @@ class SlaController extends Controller
         $query = Ticket::with(['requester:id,name', 'assignee:id,name'])
             ->whereNotIn('status', [
                 TicketStatus::Resolved->value,
-                TicketStatus::Closed->value,
             ])
             ->where('sla_due_at', '<', now());
 
@@ -78,7 +77,6 @@ class SlaController extends Controller
 
         $overdueIds = Ticket::whereNotIn('status', [
                 TicketStatus::Resolved->value,
-                TicketStatus::Closed->value,
             ])
             ->where('sla_due_at', '<', now())
             ->when(! $user->isAgent(), fn ($q) => $q->where('requester_id', $user->id))

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'IT Ticketing') — IT Ticketing</title>
+    <title>@yield('title', 'Helpdesk Support') — Helpdesk Support</title>
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,7 +71,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
                 </svg>
             </div>
-            <span class="font-semibold text-gray-900 tracking-tight">IT Ticketing</span>
+            <span class="font-semibold text-gray-900 tracking-tight">Helpdesk Support</span>
         </div>
 
         {{-- Nav --}}

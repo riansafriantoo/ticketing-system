@@ -24,26 +24,28 @@ class TicketService
 
     public function create(array $data, User $requester, ?User $assignee): Ticket
     {
-
         return DB::transaction(function () use ($data, $requester, $assignee) {
+
+            $attachments = $data['attachments'] ?? [];
+            $ticketData  = array_diff_key($data, array_flip(['attachments']));
+
             $ticket = Ticket::create([
-                ...$data,
+                ...$ticketData,
                 'requester_id' => $requester->id,
                 'assignee_id' => $assignee?->id,
             ]);
             
             $this->logActivity($ticket, $requester, 'created');
-
-            // Store attachments
-            if (!empty($data['attachments'])) {
-                $this->storeAttachments($ticket, $data['attachments'], $requester);
+ 
+            if (!empty($attachments)) {
+                $this->storeAttachments($ticket, $attachments, $requester);
             }
-
+ 
             $this->notifier->ticketCreated($ticket);
-
             return $ticket->fresh(['requester', 'assignee']);
         });
     }
+
 
     // ─── Update ───────────────────────────────────────────────────────────────
 
@@ -83,8 +85,10 @@ class TicketService
             $oldStatus = $ticket->status;
 
             $updates = ['status' => $newStatus];
-            if ($newStatus === TicketStatus::Resolved) $updates['resolved_at'] = now();
-            if ($newStatus === TicketStatus::Closed)   $updates['closed_at']   = now();
+            if ($newStatus === TicketStatus::Resolved) {
+                $updates['resolved_at'] = now();
+                $updates['closed_at'] = now();
+            }
 
             $ticket->update($updates);
 
@@ -162,11 +166,22 @@ class TicketService
     public function metrics(): array
     {
         return [
-            'total_open'     => Ticket::whereNotIn('status', [TicketStatus::Resolved, TicketStatus::Closed])->count(),
+            'total_open'     => Ticket::whereNotIn('status', [TicketStatus::Resolved])->count(),
             'total_tickets'  => Ticket::count(),
             'overdue'        => Ticket::overdue()->count(),
             'resolved_today' => Ticket::whereDate('resolved_at', today())->count(),
             'avg_resolution' => $this->avgResolutionHours(),
+        ];
+    }
+
+    public function metricsRequester(User $user): array
+    {
+        return [
+            'total_open'     => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->whereNotIn('status', [TicketStatus::Resolved])->count(),
+            'total_tickets'  => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->count(),
+            'in_progress'    => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->whereIn('status', [TicketStatus::InProgress])->count(),
+            'overdue'        => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->overdue()->count(),
+            'resolved'       => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->whereIn('status', [TicketStatus::Resolved])->count(),
         ];
     }
 
