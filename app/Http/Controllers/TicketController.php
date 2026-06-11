@@ -7,6 +7,7 @@ use App\Enums\TicketCaseType;
 use App\Enums\TicketPriority;
 use App\Enums\TicketPriorityRequester;
 use App\Enums\TicketStatus;
+use App\Enums\TicketStatusNew;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
 use App\Http\Requests\TransitionTicketRequest;
@@ -32,21 +33,30 @@ class TicketController extends Controller
         $user = $request->user();
 
         $selectedDepartment = $user->department;
-        $query = Ticket::with(['requester', 'assignee'])
-            // ->when(!$user->isAgent(), fn ($q) => $q->forRequester($user->id))
-            ->when($request->filled('status'),   fn ($q) => $q->where('status', $request->status))
-            ->when($request->filled('priority'),  fn ($q) => $q->where('priority', $request->priority))
-            ->when($request->filled('requester'),  fn ($q) => $q->where('requester_id', $request->requester))
-            ->when($request->filled('category'),  fn ($q) => $q->where('category', $request->category))
-            ->when($request->filled('assignee'),  fn ($q) => $q->where('assignee_id', $request->assignee))
-            ->when($request->filled('search'),    fn ($q) => $q->search($request->search))
-            ->when($request->boolean('overdue'),  fn ($q) => $q->overdue())
-            ->when(filled($selectedDepartment),   fn ($q) => $q
-                ->join('users', 'tickets.requester_id', '=', 'users.id')
-                ->where('users.department', $selectedDepartment)
-                ->select('tickets.*')
-            )
-            ->latest();
+        if($user->isAgent()){
+            $query = Ticket::with(['requester', 'assignee'])
+                ->when($request->filled('status'),   fn ($q) => $q->where('status', $request->status))
+                ->when($request->filled('priority'),  fn ($q) => $q->where('priority', $request->priority))
+                ->when($request->filled('requester'),  fn ($q) => $q->where('requester_id', $request->requester))
+                ->when($request->filled('category'),  fn ($q) => $q->where('category', $request->category))
+                ->when($request->filled('assignee'),  fn ($q) => $q->where('assignee_id', $request->assignee))
+                ->when($request->filled('search'),    fn ($q) => $q->search($request->search))
+                ->when($request->boolean('overdue'),  fn ($q) => $q->overdue())
+                ->latest();
+        }else{
+            $query = Ticket::with(['requester', 'assignee'])
+                ->when($request->filled('status'),   fn ($q) => $q->where('status', $request->status))
+                ->when($request->filled('priority'),  fn ($q) => $q->where('priority', $request->priority))
+                ->when($request->filled('category'),  fn ($q) => $q->where('category', $request->category))
+                ->when($request->filled('search'),    fn ($q) => $q->search($request->search))
+                ->when($request->boolean('overdue'),  fn ($q) => $q->overdue())
+                ->when(filled($selectedDepartment),   fn ($q) => $q
+                    ->join('users', 'tickets.requester_id', '=', 'users.id')
+                    ->where('users.department', $selectedDepartment)
+                    ->select('tickets.*')
+                )
+                ->latest();
+        }
 
         $tickets = $query->paginate(config('it-ticketing.tickets_per_page', 20))
                          ->withQueryString();
@@ -54,6 +64,7 @@ class TicketController extends Controller
         return view('tickets.index', [
             'tickets'    => $tickets,
             'statuses'   => TicketStatus::cases(),
+            'statusesNew' => TicketStatusNew::cases(),
             'priorities' => TicketPriority::cases(),
             'prioritiesRequester' => TicketPriorityRequester::cases(),
             'categories' => TicketCategory::cases(),
@@ -78,22 +89,23 @@ class TicketController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'subject'       => 'required|string|max:255',
-            'description'   => 'required|string|max:20000',
-            'priority'      => 'required|in:' . implode(',', \App\Enums\TicketPriority::values()),
-            'category'      => 'required|in:' . implode(',', \App\Enums\TicketCategory::values()),
-            'asset_id'      => 'nullable|exists:assets,id',
-            'attachments'   => 'nullable|array|max:5',
-            'attachments.*' => 'file|max:10240',
+            'subject'     => 'required|string|max:255',
+            'description' => 'required|string|max:20000',
+            'priority'    => 'required|in:' . implode(',', TicketPriority::values()),
+            'asset_id'    => 'nullable|exists:assets,id',
         ]);
  
-        $ticketFields = array_diff_key($validated, array_flip(['attachments']));
-        $ticketFields['attachments'] = $request->file('attachments', []);
-        $assignee = $request->filled('assignee_id') ? User::findOrFail($request->assignee_id) : null;
+        $request->validate([
+            'attachments'   => 'nullable|array|max:5',
+            'attachments.*' => 'file|max:10240|mimes:jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,txt,zip',
+        ]);
  
-        $ticket = $this->service->create($ticketFields, $request->user(), $assignee);
+        $attachments = $request->file('attachments') ?? [];
  
-        return redirect()->route('tickets.show', $ticket)
+        $ticket = $this->service->create($validated, $attachments, $request->user());
+ 
+        return redirect()
+            ->route('tickets.show', $ticket)
             ->with('success', "Ticket {$ticket->ticketNumber()} created successfully.");
     }
 
@@ -101,7 +113,7 @@ class TicketController extends Controller
     {
         // $this->authorize('view', $ticket);
 
-        $ticket->load(['requester', 'assignee', 'comments.user', 'attachments.user', 'activities.user']);
+        $ticket->load(['requester', 'assignee', 'comments.user','comments.attachments', 'attachments.user', 'activities.user']);
 
         return view('tickets.show', [
             'ticket'  => $ticket,

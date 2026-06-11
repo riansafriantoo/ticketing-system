@@ -24,8 +24,9 @@
 
         {{-- Logo --}}
         <div class="flex flex-col items-center mb-8">
-            <img src="{{ asset('images/logo.png') }}" class="w-7 h-7 rounded-full flex-shrink-0" alt="">
+            <img src="{{ asset('images/logo.png') }}" class="w-150 h-150 rounded-full flex-shrink-0" alt="">
             <h1 class="text-xl font-semibold text-gray-900">Ticketing System</h1>
+            <h1 class="text-lg font-semibold">PT Internet Pratama Indonesia</h1>
             <p class="text-sm text-gray-400 mt-1">Sign in to your account</p>
         </div>
 

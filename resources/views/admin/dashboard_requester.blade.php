@@ -14,20 +14,20 @@
             <p class="text-2xl font-semibold text-gray-900">{{ $metricsRequester['total_tickets'] }}</p>
             <p class="text-xs text-gray-400 mt-1">All tickets in system</p>
         </div>
-        <div class="bg-white rounded-xl border border-gray-100 p-4">
+        {{-- <div class="bg-white rounded-xl border border-gray-100 p-4">
             <p class="text-xs text-gray-400 mb-1">Open tickets</p>
             <p class="text-2xl font-semibold text-gray-900">{{ $metricsRequester['total_open'] }}</p>
             <p class="text-xs text-gray-400 mt-1">Active in system</p>
-        </div>
+        </div> --}}
         <div class="bg-white rounded-xl border border-gray-100 p-4">
             <p class="text-xs text-yellow-600 mb-1">In Progress</p>
             <p class="text-2xl font-semibold text-yellow-600">{{ $metricsRequester['in_progress'] }}</p>
             <p class="text-xs text-gray-400 mt-1">Tickets In Progress</p>
         </div>
         <div class="bg-white rounded-xl border border-gray-100 p-4">
-            <p class="text-xs text-green-600 mb-1">Resolved</p>
+            <p class="text-xs text-green-600 mb-1">Closed</p>
             <p class="text-2xl font-semibold text-green-600">{{ $metricsRequester['resolved'] }}</p>
-            <p class="text-xs text-gray-400 mt-1">Tickets Resolved</p>
+            <p class="text-xs text-gray-400 mt-1">Tickets Closed</p>
         </div>
     </div>
 

@@ -29,7 +29,7 @@
     {{-- ── Filters ─────────────────────────────────────────────────────────── --}}
     <form method="GET" class="flex flex-wrap items-center gap-2">
         <input type="text" name="search" value="{{ request('search') }}"
-               placeholder="Search tickets…"
+               placeholder="Search tickets/subject…"
                class="w-56 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-200">
 
         <select name="status" class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-400 bg-white">
@@ -41,20 +41,12 @@
             @endforeach
         </select>
 
+        @php dd($priorities); @endphp
         <select name="priority" class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-400 bg-white">
             <option value="">All priorities</option>
             @foreach($priorities as $p)
             <option value="{{ $p->value }}" {{ request('priority') === $p->value ? 'selected' : '' }}>
                 {{ $p->label() }}
-            </option>
-            @endforeach
-        </select>
-
-        <select name="category" class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-400 bg-white">
-            <option value="">All categories</option>
-            @foreach($categories as $c)
-            <option value="{{ $c->value }}" {{ request('category') === $c->value ? 'selected' : '' }}>
-                {{ $c->label() }}
             </option>
             @endforeach
         </select>
@@ -79,18 +71,18 @@
         </select>
         @endif
 
-        <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
+        {{-- <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
             <input type="checkbox" name="overdue" value="1" {{ request('overdue') ? 'checked' : '' }}
                    class="rounded border-gray-300 text-brand-600 focus:ring-brand-300">
             Overdue only
-        </label>
+        </label> --}}
 
         <button type="submit"
                 class="px-3 py-1.5 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700">
             Filter
         </button>
 
-        @if(request()->hasAny(['search','status','priority','category','assignee','overdue']))
+        @if(request()->hasAny(['search','status','priority','assignee','overdue']))
         <a href="{{ route('tickets.index') }}" class="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg">
             Clear
         </a>
@@ -117,7 +109,7 @@
                     <th class="text-left px-2 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-24">Priority</th>
                     @if(auth()->user()->isAgent())
                     <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36">Requester</th>
-                    <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36">Assignee</th>
+                    <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36">Agents</th>
                     @endif
                     <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-36">SLA</th>
                     <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-28">Created Date</th>
@@ -128,17 +120,6 @@
                 <tr class="ticket-row cursor-pointer" onclick="window.location='{{ route('tickets.show', $ticket) }}'">
                     <td class="px-4 py-3">
                         <span class="font-mono text-xs text-gray-500">{{ $ticket->ticketNumber() }}</span>
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="flex items-start gap-2">
-                            @if($ticket->isOverdue())
-                            <span title="SLA Breached" class="mt-0.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                            @endif
-                            <div>
-                                <p class="text-sm font-medium text-gray-900 line-clamp-1">{{ $ticket->subject }}</p>
-                                <p class="text-xs text-gray-400 capitalize">{{ $ticket->category->label() }}</p>
-                            </div>
-                        </div>
                     </td>
                     <td class="px-2 py-2">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium badge-{{ $ticket->status->value }}">

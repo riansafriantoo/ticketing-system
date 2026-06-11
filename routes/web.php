@@ -34,8 +34,9 @@ Route::middleware('auth')->group(function () {
     Route::post('tickets/{ticket}/assign', [TicketController::class, 'assign'])->name('tickets.assign');
 
     // ── Comments ──────────────────────────────────────────────────────────────
-    Route::post('tickets/{ticket}/comments', [CommentController::class, 'store'])->name('tickets.comments.store');
-    Route::delete('tickets/{ticket}/comments/{comment}', [CommentController::class, 'destroy'])->name('tickets.comments.destroy');
+    Route::post('tickets/{ticket}/comments',[CommentController::class, 'store'])->name('tickets.comments.store');
+    Route::delete('tickets/{ticket}/comments/{comment}',[CommentController::class, 'destroy'])->name('tickets.comments.destroy');
+    Route::delete('tickets/{ticket}/comments/{comment}/attachments/{attachment}',[CommentController::class, 'destroyAttachment'])->name('tickets.comments.attachments.destroy');
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
     // ── Admin ─────────────────────────────────────────────────────────────────
@@ -70,4 +71,4 @@ Route::middleware('auth')->group(function () {
 });
 
 // ── Root redirect ─────────────────────────────────────────────────────────────
-Route::get('/', fn () => redirect()->route('tickets.index'));
+Route::get('/', fn () => redirect()->route('admin.dashboard'));

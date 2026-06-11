@@ -47,7 +47,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1.5">Department <span class="text-gray-300">(optional)</span></label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">Company <span class="text-gray-300">(optional)</span></label>
                     <input type="text" name="department" value="{{ old('department') }}"
                            placeholder="e.g. Finance, HR, Operations"
                            class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100">

@@ -37,7 +37,7 @@ class Ticket extends Model
         return [
             'status'       => TicketStatus::class,
             'priority'     => TicketPriority::class,
-            'category'     => TicketCategory::class,
+            // 'category'     => TicketCategory::class,
             'sla_due_at'   => 'datetime',
             'resolved_at'  => 'datetime',
             'closed_at'    => 'datetime',
@@ -112,15 +112,23 @@ class Ticket extends Model
                  ->where('sla_due_at', '<', now());
     }
 
+    // public function scopeSearch(Builder $q, string $term): Builder
+    // {
+    //     return $q->where(function ($q) use ($term) {
+    //         $q->where('subject', 'like', "%{$term}%")
+    //           ->orWhere('description', 'like', "%{$term}%")
+    //           ->orWhere('id', $term);
+    //     });
+    // }
+
     public function scopeSearch(Builder $q, string $term): Builder
     {
         return $q->where(function ($q) use ($term) {
-            $q->where('subject', 'like', "%{$term}%")
-              ->orWhere('description', 'like', "%{$term}%")
-              ->orWhere('id', $term);
+            $q->where('tickets.subject', 'like', "%{$term}%")
+            ->orWhere('tickets.description', 'like', "%{$term}%")
+            ->orWhere('tickets.id', $term);
         });
     }
-
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     public function isOverdue(): bool

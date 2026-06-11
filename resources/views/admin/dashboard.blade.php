@@ -14,20 +14,18 @@
             <p class="text-2xl font-semibold text-gray-900">{{ $metrics['total_tickets'] }}</p>
             <p class="text-xs text-gray-400 mt-1">All tickets in system</p>
         </div>
-        <div class="bg-white rounded-xl border border-gray-100 p-4">
+        {{-- <div class="bg-white rounded-xl border border-gray-100 p-4">
             <p class="text-xs text-gray-400 mb-1">Open tickets</p>
             <p class="text-2xl font-semibold text-gray-900">{{ $metrics['total_open'] }}</p>
             <p class="text-xs text-gray-400 mt-1">Active in system</p>
+        </div> --}}
+        <div class="bg-white rounded-xl border border-gray-100 p-4">
+            <p class="text-xs text-yellow-600 mb-1">In Progress</p>
+            <p class="text-2xl font-semibold text-yellow-600">{{ $metrics['in_progress'] }}</p>
+            <p class="text-xs text-gray-400 mt-1">Tickets In Progress</p>
         </div>
         <div class="bg-white rounded-xl border border-gray-100 p-4">
-            <p class="text-xs text-red-400 mb-1">SLA breached</p>
-            <p class="text-2xl font-semibold {{ $metrics['overdue'] > 0 ? 'text-red-600' : 'text-gray-900' }}">
-                {{ $metrics['overdue'] }}
-            </p>
-            <p class="text-xs text-gray-400 mt-1">Require immediate attention</p>
-        </div>
-        <div class="bg-white rounded-xl border border-gray-100 p-4">
-            <p class="text-xs text-green-600 mb-1">Resolved today</p>
+            <p class="text-xs text-green-600 mb-1">Closed</p>
             <p class="text-2xl font-semibold text-green-600">{{ $metrics['resolved_today'] }}</p>
             <p class="text-xs text-gray-400 mt-1">Tickets closed</p>
         </div>

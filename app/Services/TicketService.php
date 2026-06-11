@@ -22,19 +22,18 @@ class TicketService
 
     // ─── Create ───────────────────────────────────────────────────────────────
 
-    public function create(array $data, User $requester, ?User $assignee): Ticket
+    public function create(array $data, array $attachments, User $requester): Ticket
     {
-        return DB::transaction(function () use ($data, $requester, $assignee) {
-
-            $attachments = $data['attachments'] ?? [];
-            $ticketData  = array_diff_key($data, array_flip(['attachments']));
-
+        return DB::transaction(function () use ($data, $attachments, $requester) {
+ 
+            $ticketData = array_diff_key($data, array_flip(['attachments', 'files']));
+            
+ 
             $ticket = Ticket::create([
                 ...$ticketData,
                 'requester_id' => $requester->id,
-                'assignee_id' => $assignee?->id,
             ]);
-            
+ 
             $this->logActivity($ticket, $requester, 'created');
  
             if (!empty($attachments)) {
@@ -42,6 +41,7 @@ class TicketService
             }
  
             $this->notifier->ticketCreated($ticket);
+ 
             return $ticket->fresh(['requester', 'assignee']);
         });
     }
@@ -85,7 +85,7 @@ class TicketService
             $oldStatus = $ticket->status;
 
             $updates = ['status' => $newStatus];
-            if ($newStatus === TicketStatus::Resolved) {
+            if ($newStatus === TicketStatus::Closed) {
                 $updates['resolved_at'] = now();
                 $updates['closed_at'] = now();
             }
@@ -127,20 +127,65 @@ class TicketService
     private function storeAttachments(Ticket $ticket, array $files, User $uploader): void
     {
         foreach ($files as $file) {
-            if (!($file instanceof UploadedFile)) continue;
-            if (!$file->isValid()) continue;
-
-            $path = $file->store("tickets/{$ticket->id}/attachments", 'public');
-
-            Attachment::create([
-                'ticket_id'     => $ticket->id,
-                'user_id'       => $uploader->id,
-                'original_name' => $file->getClientOriginalName(),
-                'stored_name'   => $path,
-                'mime_type'     => $file->getMimeType(),
-                'size'          => $file->getSize(),
-                'disk'          => 'public',
-            ]);
+ 
+            if (!($file instanceof UploadedFile)) {
+                Log::warning("Skipped non-UploadedFile attachment for ticket #{$ticket->id}", [
+                    'type'  => gettype($file),
+                    'value' => is_string($file) ? $file : '(non-string)',
+                ]);
+                continue;
+            }
+ 
+            // ── Guard 2: upload must have succeeded (no PHP upload error) ─────
+            if (!$file->isValid()) {
+                Log::warning("Skipped invalid upload for ticket #{$ticket->id}", [
+                    'error' => $file->getError(),
+                    'name'  => $file->getClientOriginalName(),
+                ]);
+                continue;
+            }
+ 
+            // ── Guard 3: enforce max size (belt-and-suspenders) ───────────────
+            $maxBytes = config('servicedesk.uploads.max_size_kb', 10240) * 1024;
+            if ($file->getSize() > $maxBytes) {
+                Log::warning("Skipped oversized attachment for ticket #{$ticket->id}", [
+                    'size' => $file->getSize(),
+                    'name' => $file->getClientOriginalName(),
+                ]);
+                continue;
+            }
+ 
+            try {
+                $storedPath = $file->store(
+                    "tickets/{$ticket->id}/attachments",
+                    'public'
+                );
+ 
+                if (!$storedPath) {
+                    Log::error("Storage::store() returned false for ticket #{$ticket->id}");
+                    continue;
+                }
+ 
+                // Insert the Attachment record
+                Attachment::create([
+                    'ticket_id'     => $ticket->id,
+                    'user_id'       => $uploader->id,
+                    'original_name' => $file->getClientOriginalName(),
+                    'stored_name'   => $storedPath,
+                    'mime_type'     => $file->getMimeType() ?? $file->getClientMimeType(),
+                    'size'          => $file->getSize(),
+                    'disk'          => 'public',
+                ]);
+ 
+                Log::info("Attachment stored for ticket #{$ticket->id}: {$storedPath}");
+ 
+            } catch (\Throwable $e) {
+                // Log but don't abort the transaction — ticket still gets created
+                Log::error("Attachment storage failed for ticket #{$ticket->id}: {$e->getMessage()}", [
+                    'file'  => $file->getClientOriginalName(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
         }
     }
 
@@ -166,10 +211,10 @@ class TicketService
     public function metrics(): array
     {
         return [
-            'total_open'     => Ticket::whereNotIn('status', [TicketStatus::Resolved])->count(),
+            'in_progress'     => Ticket::where('status', TicketStatus::InProgress)->count(),
             'total_tickets'  => Ticket::count(),
             'overdue'        => Ticket::overdue()->count(),
-            'resolved_today' => Ticket::whereDate('resolved_at', today())->count(),
+            'resolved_today' => Ticket::whereIn('status', [TicketStatus::Closed])->count(),
             'avg_resolution' => $this->avgResolutionHours(),
         ];
     }
@@ -177,11 +222,11 @@ class TicketService
     public function metricsRequester(User $user): array
     {
         return [
-            'total_open'     => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->whereNotIn('status', [TicketStatus::Resolved])->count(),
+            'total_open'     => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->where('status', TicketStatus::InProgress)->count(),
             'total_tickets'  => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->count(),
             'in_progress'    => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->whereIn('status', [TicketStatus::InProgress])->count(),
             'overdue'        => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->overdue()->count(),
-            'resolved'       => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->whereIn('status', [TicketStatus::Resolved])->count(),
+            'resolved'       => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->whereIn('status', [TicketStatus::Closed])->count(),
         ];
     }
 

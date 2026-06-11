@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Helpdesk Support') — Helpdesk Support</title>
+    <title>@yield('title', 'Helpdesk Support') — Ticketing System</title>
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -66,12 +66,8 @@
 
         {{-- Logo --}}
         <div class="flex items-center gap-2.5 px-5 h-16 border-b border-gray-100">
-            <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center flex-shrink-0">
-                <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
-                </svg>
-            </div>
-            <span class="font-semibold text-gray-900 tracking-tight">Helpdesk Support</span>
+            <img src="{{ asset('images/logo.png') }}" class="w-10 h-10 rounded-full flex-shrink-0" alt="Ticketing System Logo">
+            <span class="font-semibold text-gray-900 tracking-tight">Ticketing System</span>
         </div>
 
         {{-- Nav --}}
@@ -108,17 +104,17 @@
                 <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                 My Queue
             </a>
-            <a href="{{ route('tickets.index', ['overdue' => 1]) }}"
+            {{-- <a href="{{ route('tickets.index', ['overdue' => 1]) }}"
                class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 font-medium hover:bg-gray-50">
                 <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 <span class="flex-1">Overdue</span>
                 <span id="sidebar-overdue-badge" class="hidden px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] text-center"></span>
-            </a>
+            </a> --}}
             @endif
 
             {{-- Assets section --}}
             @if(auth()->user()->isAdmin())
-            <div class="pt-4 pb-1 px-3">
+            {{-- <div class="pt-4 pb-1 px-3">
                 <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Assets</p>
             </div>
 
@@ -132,7 +128,7 @@
                class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 font-medium hover:bg-gray-50 {{ str_contains($path,'assets/create') ? 'active' : '' }}">
                 <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                 Add Asset
-            </a>
+            </a> --}}
             <div class="pt-4 pb-1 px-3">
                 <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Admin</p>
             </div>
@@ -145,12 +141,13 @@
         </nav>
 
         {{-- User foot --}}
+        <p class="text-[10px] font-semibold text-gray-400 flex items-center justify-center tracking-wider">© @php echo date('Y');@endphp  PT. Internet Pratama Indonesia</p>
         <div class="border-t border-gray-100 p-3">
             <div class="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer group">
                 <img src="{{ auth()->user()->avatarUrl() }}" class="w-7 h-7 rounded-full flex-shrink-0" alt="">
                 <div class="flex-1 min-w-0">
                     <p class="text-xs font-medium text-gray-900 truncate">{{ auth()->user()->name }}</p>
-                    <p class="text-[10px] text-gray-400 truncate capitalize">{{ auth()->user()->roles->first()?->name ?? 'user' }}</p>
+                    <p class="text-[10px] text-gray-400 truncate capitalize">{{ auth()->user()->roles->first()?->name .' - ' . auth()->user()->department ?? 'user' }}</p>
                 </div>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

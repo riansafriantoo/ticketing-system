@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Enums\Department;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\TicketService;
@@ -30,6 +31,7 @@ class AdminController extends Controller
         $metricsRequester = $this->service->metricsRequester($user);
         
         $byStatus = Ticket::selectRaw('status, COUNT(*) as count')
+            ->whereNotIn('status', [TicketStatus::Resolved])
             ->groupBy('status')
             ->pluck('count', 'status');
 
@@ -54,6 +56,7 @@ class AdminController extends Controller
                 fn ($q) => $q
                     ->join('users', 'tickets.requester_id', '=', 'users.id')
                     ->where('users.department', $selectedDepartment)
+                    ->whereIn('status', [TicketStatus::Open])
                     ->select('tickets.*')
             )
             ->latest('tickets.created_at')
@@ -104,6 +107,7 @@ class AdminController extends Controller
     {
         return view('admin.create', [
             'roles' => Role::orderBy('name')->get(),
+            'departments' => Department::cases(),
         ]);
     }
 
@@ -128,6 +132,7 @@ class AdminController extends Controller
         return view('admin.edit', [
             'user'  => $user->load('roles'),
             'roles' => Role::orderBy('name')->get(),
+            'departments' => Department::cases(),
         ]);
     }
 
@@ -142,7 +147,7 @@ class AdminController extends Controller
                                 ->mixedCase()
                                 ->numbers()],
             'role'       => ['required', 'string', 'exists:roles,name'],
-            'department' => ['nullable', 'string', 'max:100'],
+            'department' => ['required', 'string', 'max:100'],
             'phone'      => ['nullable', 'string', 'max:30'],
             'is_active'  => ['boolean'],
         ]);
@@ -151,7 +156,7 @@ class AdminController extends Controller
             'name'       => $data['name'],
             'email'      => $data['email'],
             'password'   => Hash::make($data['password']),
-            'department' => $data['department'] ?? null,
+            'department' => $data['department'],
             'phone'      => $data['phone']       ?? null,
             'is_active'  => $data['is_active']   ?? true,
         ]);
@@ -173,7 +178,7 @@ class AdminController extends Controller
             'email'      => ['required', 'email', 'max:255', "unique:users,email,{$user->id}"],
             'password'   => ['nullable', 'confirmed', Password::min(8)->mixedCase()->numbers()],
             'role'       => ['required', 'string', 'exists:roles,name'],
-            'department' => ['nullable', 'string', 'max:100'],
+            'department' => ['required', 'string', 'max:100'],
             'phone'      => ['nullable', 'string', 'max:30'],
             'is_active'  => ['boolean'],
         ]);
@@ -181,7 +186,7 @@ class AdminController extends Controller
         $user->update([
             'name'       => $data['name'],
             'email'      => $data['email'],
-            'department' => $data['department'] ?? null,
+            'department' => $data['department'],
             'phone'      => $data['phone']       ?? null,
             'is_active'  => $data['is_active']   ?? true,
             ...($data['password'] ? ['password' => Hash::make($data['password'])] : []),

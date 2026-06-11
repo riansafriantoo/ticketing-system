@@ -115,7 +115,7 @@
                 </div>
                 @if($user->department)
                 <div class="flex justify-between text-xs">
-                    <span class="text-gray-500">Department</span>
+                    <span class="text-gray-500">Company</span>
                     <span class="text-gray-700">{{ $user->department }}</span>
                 </div>
                 @endif
@@ -139,7 +139,7 @@
             </a>
 
             @if($user->id !== auth()->id())
-            <form method="POST" action="{{ route('users.toggle-status', $user) }}">
+            {{-- <form method="POST" action="{{ route('users.toggle-status', $user) }}">
                 @csrf @method('PATCH')
                 <button type="submit"
                         class="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs font-medium rounded-lg border transition-colors
@@ -158,7 +158,7 @@
                     Activate Account
                     @endif
                 </button>
-            </form>
+            </form> --}}
 
             <form method="POST" action="{{ route('users.destroy', $user) }}"
                   onsubmit="return confirm('Permanently delete {{ addslashes($user->name) }}?')">

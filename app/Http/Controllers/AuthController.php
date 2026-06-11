@@ -24,12 +24,12 @@ class AuthController extends Controller
         ]);
 
         if (!Auth::attempt($credentials, $request->boolean('remember'))) {
-            return back()->withErrors(['email' => 'Invalid credentials.'])->withInput();
+            return back()->withErrors(['email' => 'Invalid Username/Password.'])->withInput();
         }
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('tickets.index'));
+        return redirect()->intended(route('admin.dashboard'));
     }
 
     public function showRegister(): View

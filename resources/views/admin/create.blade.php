@@ -40,10 +40,7 @@
                     <label for="email" class="block text-sm font-medium text-gray-700 mb-1.5">
                         Email Address <span class="text-red-500">*</span>
                     </label>
-                    <input type="email" id="email" name="email"
-                           value="{{ old('email') }}"
-                           placeholder="john@company.com"
-                           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-200 @error('email') border-red-400 bg-red-50 @enderror">
+                    <input type="email" id="email" name="email" value="{{ old('email') }}" placeholder="john@company.com" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-200 @error('email') border-red-400 bg-red-50 @enderror">
                     @error('email')
                     <p class="mt-1 text-xs text-red-500 flex items-center gap-1">
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
@@ -55,12 +52,23 @@
                 {{-- Department --}}
                 <div>
                     <label for="department" class="block text-sm font-medium text-gray-700 mb-1.5">
-                        Department <span class="text-gray-400 font-normal">(optional)</span>
+                        Company <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" id="department" name="department"
-                           value="{{ old('department') }}"
-                           placeholder="e.g. Finance, HR, IT"
-                           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-200">
+                    <select id="department" name="department" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-200">
+                        <option value="">Select company</option>
+                        @foreach($departments as $dept)
+                        <option value="{{ $dept->value }}" {{ old('department') === $dept->value ? 'selected' : '' }}>
+                            {{ $dept->label() }}
+                        </option>
+                        @endforeach
+                    </select>
+                    @error('department')
+                    <p class="mt-1 text-xs text-red-500 flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                        {{ $message }}
+                    </p>
+                    @enderror
+                    {{-- <input type="text" id="department" name="department" value="{{ old('department') }}" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-200"> --}}
                 </div>
 
                 {{-- Phone --}}

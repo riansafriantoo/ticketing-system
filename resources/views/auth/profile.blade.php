@@ -33,7 +33,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1.5">Department</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">Company <span class="text-red-500">*</span></label>
                     <input type="text" name="department" value="{{ old('department', $user->department) }}"
                            class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand-400">
                 </div>

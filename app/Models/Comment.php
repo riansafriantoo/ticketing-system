@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Comment extends Model
@@ -15,15 +16,15 @@ class Comment extends Model
         'ticket_id',
         'user_id',
         'body',
-        'is_internal',  // internal notes visible to agents only
+        'is_internal',
     ];
 
     protected function casts(): array
     {
-        return [
-            'is_internal' => 'boolean',
-        ];
+        return ['is_internal' => 'boolean'];
     }
+
+    // ── Relationships ─────────────────────────────────────────────────────────
 
     public function ticket(): BelongsTo
     {
@@ -33,5 +34,10 @@ class Comment extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(Attachment::class);
     }
 }

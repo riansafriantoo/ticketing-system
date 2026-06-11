@@ -20,7 +20,7 @@
     {{-- ── Filters ─────────────────────────────────────────────────────────── --}}
     <form method="GET" class="flex flex-wrap items-center gap-2">
         <input type="text" name="search" value="{{ request('search') }}"
-               placeholder="Search name, email, department…"
+               placeholder="Search name, email, company…"
                class="w-64 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-200">
 
         <select name="role" class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-brand-400">
@@ -71,7 +71,7 @@
             <thead>
                 <tr class="border-b border-gray-100 bg-gray-50">
                     <th class="text-left px-5 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">User</th>
-                    <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Department</th>
+                    <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Company</th>
                     <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-24">Role</th>
                     <th class="text-center px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-24">Tickets</th>
                     <th class="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-24">Status</th>
@@ -93,7 +93,7 @@
                         </div>
                     </td>
 
-                    {{-- Department --}}
+                    {{-- Company --}}
                     <td class="px-4 py-3">
                         <span class="text-sm text-gray-600">{{ $user->department ?? '—' }}</span>
                     </td>
@@ -152,7 +152,7 @@
 
                             {{-- Toggle active --}}
                             @if($user->id !== auth()->id())
-                            <form method="POST" action="{{ route('users.toggle-status', $user) }}">
+                            {{-- <form method="POST" action="{{ route('users.toggle-status', $user) }}">
                                 @csrf @method('PATCH')
                                 <button type="submit"
                                         title="{{ $user->is_active ? 'Deactivate' : 'Activate' }}"
@@ -167,7 +167,7 @@
                                     </svg>
                                     @endif
                                 </button>
-                            </form>
+                            </form> --}}
 
                             {{-- Delete --}}
                             <form method="POST" action="{{ route('users.destroy', $user) }}"

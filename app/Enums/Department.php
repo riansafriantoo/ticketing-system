@@ -4,8 +4,8 @@ namespace App\Enums;
 
 enum Department: string
 {
-    case IPI          = 'ipi';
-    case PERSERO      = 'persero';
+    case IPI          = 'IPI';
+    case PERSERO      = 'PERSERO';
 
     public function label(): string
     {
