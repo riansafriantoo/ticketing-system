@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('status', 20)->default('open');
             $table->string('priority', 20)->default('medium');
             $table->string('category', 30)->default('other');
+            $table->string('case_type', 30)->default('hardware');
 
             $table->foreignId('requester_id')
                   ->constrained('users')

@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\AssetCategory;
 use App\Enums\AssetStatus;
-use App\Enums\TicketCategory;
+use App\Enums\TicketCaseType;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Models\Asset;
@@ -29,15 +29,15 @@ class DatabaseSeeder extends Seeder
         $admin = User::factory()->create([
             'name'       => 'Admin User',
             'email'      => 'admin@it-ticketing.app',
-            'department' => 'IT',
+            'department' => 'IPI',
         ]);
         $admin->assignRole('admin');
 
         // ── Agents ────────────────────────────────────────────────────────────
-        $agents = User::factory(4)->create()->each(fn ($u) => $u->assignRole('agent'));
+        $agents = User::factory(4)->create(['department' => 'IPI'])->each(fn ($u) => $u->assignRole('agent'));
 
         // ── End users ─────────────────────────────────────────────────────────
-        $users = User::factory(10)->create()->each(fn ($u) => $u->assignRole('user'));
+        $users = User::factory(10)->create(['department' => 'PERSERO'])->each(fn ($u) => $u->assignRole('user'));
 
         // ── Assets ────────────────────────────────────────────────────────────
         $assets = Asset::factory(30)->create();
@@ -92,7 +92,7 @@ class DatabaseSeeder extends Seeder
                     'description'  => fake()->paragraphs(3, true),
                     'status'       => $status,
                     'priority'     => $priority,
-                    'category'     => collect(TicketCategory::cases())->random(),
+                    'case_type'    => collect(TicketCaseType::cases())->random(),
                     'requester_id' => $requester->id,
                     'assignee_id'  => $agents->random()->id,
                     'asset_id'     => $asset?->id,

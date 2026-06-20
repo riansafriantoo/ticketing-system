@@ -130,7 +130,6 @@ class TicketController extends Controller
             'ticket'     => $ticket,
             'priorities' => TicketPriority::cases(),
             'prioritiesRequester' => TicketPriorityRequester::cases(),
-            'categories' => TicketCategory::cases(),
             'caseTypes' => TicketCaseType::cases(),
         ]);
     }
