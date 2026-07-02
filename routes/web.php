@@ -7,6 +7,7 @@ use App\Http\Controllers\SlaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\TicketExportController;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -27,6 +28,9 @@ Route::middleware('auth')->group(function () {
     Route::get('api/sla-notifications',              [SlaController::class, 'index'])->name('sla.notifications');
     Route::post('api/sla-notifications/{id}/dismiss',[SlaController::class, 'dismiss'])->name('sla.dismiss');
     Route::post('api/sla-notifications/dismiss-all', [SlaController::class, 'dismissAll'])->name('sla.dismiss-all');
+
+    // ── Ticket export (Excel) ───────────────────────────────────────────────
+    Route::get('tickets/export', TicketExportController::class)->name('tickets.export');
 
     // ── Tickets ───────────────────────────────────────────────────────────────
     Route::resource('tickets', TicketController::class);

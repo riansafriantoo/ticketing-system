@@ -3,77 +3,73 @@
 namespace App\Services;
 
 use App\Enums\TicketStatus;
+use App\Enums\TicketStatusNew;
+use App\Events\CommentAdded;
+use App\Events\TicketAssigned;
+use App\Events\TicketCreated;
+use App\Events\TicketStatusChanged;
 use App\Models\Activity;
 use App\Models\Attachment;
+use App\Models\Comment;
 use App\Models\Ticket;
+use App\Models\TicketHold;
 use App\Models\User;
-use App\Notifications\TicketCreated;
-use App\Notifications\TicketStatusChanged;
-use App\Notifications\TicketAssigned;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class TicketService
 {
-    public function __construct(
-        private readonly NotificationService $notifier
-    ) {}
-
-    // ─── Create ───────────────────────────────────────────────────────────────
 
     public function create(array $data, array $attachments, User $requester): Ticket
     {
-        return DB::transaction(function () use ($data, $attachments, $requester) {
- 
+        $ticket = DB::transaction(function () use ($data, $attachments, $requester) {
             $ticketData = array_diff_key($data, array_flip(['attachments', 'files']));
-            
- 
+
             $ticket = Ticket::create([
                 ...$ticketData,
                 'requester_id' => $requester->id,
             ]);
- 
+
             $this->logActivity($ticket, $requester, 'created');
- 
+
             if (!empty($attachments)) {
                 $this->storeAttachments($ticket, $attachments, $requester);
             }
- 
-            $this->notifier->ticketCreated($ticket);
- 
+
             return $ticket->fresh(['requester', 'assignee']);
         });
+
+        Event::dispatch(new TicketCreated($ticket, $requester));
+
+        return $ticket;
     }
-
-
-    // ─── Update ───────────────────────────────────────────────────────────────
 
     public function update(Ticket $ticket, array $data, User $actor): Ticket
     {
         return DB::transaction(function () use ($ticket, $data, $actor) {
-            $changes = [];
-
-            if (isset($data['priority']) && $data['priority'] !== $ticket->priority->value) {
-                $changes[] = ['action' => 'priority_changed', 'meta' => [
+            if (
+                isset($data['priority']) &&
+                $data['priority'] !== $ticket->priority->value
+            ) {
+                $this->logActivity($ticket, $actor, 'priority_changed', [
                     'from' => $ticket->priority->value,
                     'to'   => $data['priority'],
-                ]];
+                ]);
             }
 
             $ticket->update($data);
-
-            foreach ($changes as $change) {
-                $this->logActivity($ticket, $actor, $change['action'], $change['meta']);
-            }
-
             return $ticket->fresh();
         });
     }
 
-    // ─── Status transition ────────────────────────────────────────────────────
-
-    public function transition(Ticket $ticket, TicketStatus $newStatus, User $actor): Ticket
+    /**
+     * Transition a ticket's status, with hold-time tracking and
+     * email notification on every status change.
+     */
+    public function transition(Ticket $ticket, TicketStatusNew $newStatus, User $actor, ?string $holdReason = null): Ticket
     {
         if (!$ticket->canTransitionTo($newStatus)) {
             throw new \DomainException(
@@ -81,11 +77,23 @@ class TicketService
             );
         }
 
-        return DB::transaction(function () use ($ticket, $newStatus, $actor) {
-            $oldStatus = $ticket->status;
+        $oldStatus = $ticket->status;
 
+        $ticket = DB::transaction(function () use ($ticket, $newStatus, $actor, $holdReason, $oldStatus) {
+           
             $updates = ['status' => $newStatus];
-            if ($newStatus === TicketStatus::Closed) {
+            if ($newStatus === TicketStatusNew::OnHold) {
+                $updates['hold_started_at'] = now();
+
+                TicketHold::create([
+                    'ticket_id' => $ticket->id,
+                    'held_by'   => $actor->id,
+                    'held_at'   => now(),
+                    'reason'    => $holdReason,
+                ]);
+            }
+
+            if ($newStatus === TicketStatusNew::Closed) {
                 $updates['resolved_at'] = now();
                 $updates['closed_at'] = now();
             }
@@ -97,125 +105,70 @@ class TicketService
                 'to'   => $newStatus->value,
             ]);
 
-            $this->notifier->statusChanged($ticket, $oldStatus);
-
             return $ticket->fresh();
         });
+
+        Event::dispatch(new TicketStatusChanged($ticket, $oldStatus, $newStatus, $actor));
+
+        return $ticket;
     }
 
-    // ─── Assign ───────────────────────────────────────────────────────────────
 
     public function assign(Ticket $ticket, ?User $assignee, User $actor): Ticket
     {
-        return DB::transaction(function () use ($ticket, $assignee, $actor) {
+        $previousAssignee = $ticket->assignee;
+
+        $ticket = DB::transaction(function () use ($ticket, $assignee, $actor) {
             $ticket->update(['assignee_id' => $assignee?->id]);
 
             $this->logActivity($ticket, $actor, 'assigned', [
                 'to' => $assignee?->name ?? 'Unassigned',
             ]);
 
-            if ($assignee) {
-                $this->notifier->ticketAssigned($ticket, $assignee);
-            }
-
             return $ticket->fresh(['assignee']);
         });
+
+        Event::dispatch(new TicketAssigned($ticket, $previousAssignee, $assignee, $actor));
+
+        return $ticket;
     }
 
-    // ─── Attachments ──────────────────────────────────────────────────────────
-
-    private function storeAttachments(Ticket $ticket, array $files, User $uploader): void
+    public function addComment(Ticket $ticket, User $user, string $body, bool $isInternal = false): Comment
     {
-        foreach ($files as $file) {
- 
-            if (!($file instanceof UploadedFile)) {
-                Log::warning("Skipped non-UploadedFile attachment for ticket #{$ticket->id}", [
-                    'type'  => gettype($file),
-                    'value' => is_string($file) ? $file : '(non-string)',
-                ]);
-                continue;
-            }
- 
-            // ── Guard 2: upload must have succeeded (no PHP upload error) ─────
-            if (!$file->isValid()) {
-                Log::warning("Skipped invalid upload for ticket #{$ticket->id}", [
-                    'error' => $file->getError(),
-                    'name'  => $file->getClientOriginalName(),
-                ]);
-                continue;
-            }
- 
-            // ── Guard 3: enforce max size (belt-and-suspenders) ───────────────
-            $maxBytes = config('servicedesk.uploads.max_size_kb', 10240) * 1024;
-            if ($file->getSize() > $maxBytes) {
-                Log::warning("Skipped oversized attachment for ticket #{$ticket->id}", [
-                    'size' => $file->getSize(),
-                    'name' => $file->getClientOriginalName(),
-                ]);
-                continue;
-            }
- 
-            try {
-                $storedPath = $file->store(
-                    "tickets/{$ticket->id}/attachments",
-                    'public'
-                );
- 
-                if (!$storedPath) {
-                    Log::error("Storage::store() returned false for ticket #{$ticket->id}");
-                    continue;
-                }
- 
-                // Insert the Attachment record
-                Attachment::create([
-                    'ticket_id'     => $ticket->id,
-                    'user_id'       => $uploader->id,
-                    'original_name' => $file->getClientOriginalName(),
-                    'stored_name'   => $storedPath,
-                    'mime_type'     => $file->getMimeType() ?? $file->getClientMimeType(),
-                    'size'          => $file->getSize(),
-                    'disk'          => 'public',
-                ]);
- 
-                Log::info("Attachment stored for ticket #{$ticket->id}: {$storedPath}");
- 
-            } catch (\Throwable $e) {
-                // Log but don't abort the transaction — ticket still gets created
-                Log::error("Attachment storage failed for ticket #{$ticket->id}: {$e->getMessage()}", [
-                    'file'  => $file->getClientOriginalName(),
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
-        }
-    }
-
-    // ─── Activity log ─────────────────────────────────────────────────────────
-
-    private function logActivity(Ticket $ticket, User $actor, string $action, array $meta = []): void
-    {
-        try {
-            Activity::create([
-                'ticket_id'  => $ticket->id,
-                'user_id'    => $actor->id,
-                'action'     => $action,
-                'meta'       => $meta,
-                'created_at' => now(),
+        $comment = DB::transaction(function () use ($ticket, $user, $body, $isInternal) {
+            $comment = $ticket->comments()->create([
+                'user_id'     => $user->id,
+                'body'        => $body,
+                'is_internal' => $isInternal,
             ]);
-        } catch (\Throwable $e) {
-            Log::error("Activity log failed: {$e->getMessage()}");
-        }
+ 
+            $this->logActivity($ticket, $user, 'comment_added', [
+                'is_internal' => $isInternal,
+            ]);
+ 
+            return $comment;
+        });
+ 
+        Event::dispatch(new CommentAdded($ticket, $comment));
+ 
+        return $comment;
     }
 
-    // ─── Metrics (for dashboard) ──────────────────────────────────────────────
-
-    public function metrics(): array
+    public function metrics(User $user): array
     {
         return [
-            'in_progress'     => Ticket::where('status', TicketStatus::InProgress)->count(),
-            'total_tickets'  => Ticket::count(),
-            'overdue'        => Ticket::overdue()->count(),
-            'resolved_today' => Ticket::whereIn('status', [TicketStatus::Closed])->count(),
-            'avg_resolution' => $this->avgResolutionHours(),
+            'total_open'     => Ticket::whereNotIn('status', [TicketStatus::Resolved, TicketStatus::Closed])->count(),
+            'total_tickets'  => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->count(),
+            'in_progress'    => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->whereIn('status', [TicketStatus::InProgress])->count(),
+            'overdue'        => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->overdue()->count(),
+            'resolved'       => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->whereIn('status', [TicketStatus::Closed])->count(),
+            'resolved_today' => Ticket::whereDate('resolved_at', today())->count(),
+            'avg_resolution' => round(
+                (float) Ticket::whereNotNull('resolved_at')
+                    ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, resolved_at)) as avg')
+                    ->value('avg'),
+                1
+            ),
         ];
     }
 
@@ -230,12 +183,49 @@ class TicketService
         ];
     }
 
-    private function avgResolutionHours(): float
-    {
-        $avg = Ticket::whereNotNull('resolved_at')
-            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, resolved_at)) as avg')
-            ->value('avg');
+    // ── Private helpers ───────────────────────────────────────────────────────
 
-        return round((float) $avg, 1);
+    private function storeAttachments(Ticket $ticket, array $files, User $uploader): void
+    {
+        foreach ($files as $file) {
+            if (!($file instanceof UploadedFile) || !$file->isValid()) {
+                continue;
+            }
+
+            try {
+                $storedPath = $file->store("tickets/{$ticket->id}/attachments", 'public');
+
+                if (!$storedPath || !Storage::disk('public')->exists($storedPath)) {
+                    continue;
+                }
+
+                Attachment::create([
+                    'ticket_id'     => $ticket->id,
+                    'user_id'       => $uploader->id,
+                    'original_name' => $file->getClientOriginalName(),
+                    'stored_name'   => $storedPath,
+                    'mime_type'     => $file->getMimeType() ?? $file->getClientMimeType(),
+                    'size'          => $file->getSize(),
+                    'disk'          => 'public',
+                ]);
+            } catch (\Throwable $e) {
+                Log::error("Attachment storage failed for ticket #{$ticket->id}: {$e->getMessage()}");
+            }
+        }
+    }
+
+    private function logActivity(Ticket $ticket, User $actor, string $action, array $meta = []): void
+    {
+        try {
+            Activity::create([
+                'ticket_id'  => $ticket->id,
+                'user_id'    => $actor->id,
+                'action'     => $action,
+                'meta'       => $meta,
+                'created_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Activity log failed: {$e->getMessage()}");
+        }
     }
 }

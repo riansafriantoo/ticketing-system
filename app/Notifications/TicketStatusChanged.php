@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Enums\TicketStatus;
+use App\Enums\TicketStatusNew;
 use App\Models\Ticket;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -15,7 +16,7 @@ class TicketStatusChanged extends Notification implements ShouldQueue
 
     public function __construct(
         public readonly Ticket $ticket,
-        public readonly TicketStatus $oldStatus
+        public readonly TicketStatusNew $oldStatus
     ) {}
 
     public function via(object $notifiable): array

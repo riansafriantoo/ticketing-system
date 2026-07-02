@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\TicketCaseType;
 use App\Enums\TicketCategory;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Enums\TicketStatusNew;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 
 class Ticket extends Model
 {
@@ -24,6 +27,7 @@ class Ticket extends Model
         'status',
         'priority',
         'category',
+        'case_type',
         'requester_id',
         'assignee_id',
         'sla_due_at',
@@ -35,9 +39,9 @@ class Ticket extends Model
     protected function casts(): array
     {
         return [
-            'status'       => TicketStatus::class,
+            'status'       => TicketStatusNew::class,
             'priority'     => TicketPriority::class,
-            // 'category'     => TicketCategory::class,
+            'case_type'    => TicketCaseType::class,
             'sla_due_at'   => 'datetime',
             'resolved_at'  => 'datetime',
             'closed_at'    => 'datetime',
@@ -49,7 +53,7 @@ class Ticket extends Model
     {
         static::creating(function (Ticket $ticket) {
             $ticket->uuid     = $ticket->uuid ?? (string) Str::uuid();
-            $ticket->status   = $ticket->status ?? TicketStatus::Open;
+            $ticket->status   = $ticket->status ?? TicketStatusNew::Open;
             $ticket->sla_due_at = now()->addHours(
                 $ticket->priority?->slaHours() ?? TicketPriority::Medium->slaHours()
             );
@@ -89,11 +93,16 @@ class Ticket extends Model
         return $this->hasMany(Activity::class)->latest();
     }
 
+    public function holds(): HasMany       
+    { 
+        return $this->hasMany(TicketHold::class)->latest('held_at'); 
+    }
+
     // ─── Scopes ───────────────────────────────────────────────────────────────
 
     public function scopeOpen(Builder $q): Builder
     {
-        return $q->where('status', TicketStatus::Open);
+        return $q->where('status', TicketStatusNew::Open);
     }
 
     public function scopeAssignedTo(Builder $q, int $userId): Builder
@@ -112,15 +121,6 @@ class Ticket extends Model
                  ->where('sla_due_at', '<', now());
     }
 
-    // public function scopeSearch(Builder $q, string $term): Builder
-    // {
-    //     return $q->where(function ($q) use ($term) {
-    //         $q->where('subject', 'like', "%{$term}%")
-    //           ->orWhere('description', 'like', "%{$term}%")
-    //           ->orWhere('id', $term);
-    //     });
-    // }
-
     public function scopeSearch(Builder $q, string $term): Builder
     {
         return $q->where(function ($q) use ($term) {
@@ -128,6 +128,20 @@ class Ticket extends Model
             ->orWhere('tickets.description', 'like', "%{$term}%")
             ->orWhere('tickets.id', $term);
         });
+    }
+
+
+    public function scopeDateRange(Builder $q, ?string $from, ?string $to): Builder
+    {
+        if ($from) {
+            $q->where('created_at', '>=', Carbon::parse($from)->startOfDay());
+        }
+    
+        if ($to) {
+            $q->where('created_at', '<=', Carbon::parse($to)->endOfDay());
+        }
+    
+        return $q;
     }
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -148,12 +162,12 @@ class Ticket extends Model
     public function ticketNumber(): string
     {
         $date = $this->created_at->format('ymd');
-        $sequence = str_pad($this->id, 4, '0', STR_PAD_LEFT);
+        $sequence = str_pad($this->id, 3, '0', STR_PAD_LEFT);
 
-        return "#{$date}{$sequence}";
+        return "#{$date}8{$sequence}";
     }
 
-    public function canTransitionTo(TicketStatus $newStatus): bool
+    public function canTransitionTo(TicketStatusNew $newStatus): bool
     {
         return in_array($newStatus, $this->status->transitions());
     }

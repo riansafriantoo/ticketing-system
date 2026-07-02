@@ -229,6 +229,12 @@
                     </div>
                 </div>
                 <div class="flex justify-between">
+                    <span class="text-gray-400">Case Type</span>
+                    <div class="flex items-center gap-1">
+                        <span class="text-gray-700">{{ $ticket->case_type->label() }}</span>
+                    </div>
+                </div>
+                <div class="flex justify-between">
                     <span class="text-gray-400">Priority</span>
                     <div class="flex items-center gap-1">
                         <span class="text-gray-700"> {{ $ticket->priority->label() }}</span>

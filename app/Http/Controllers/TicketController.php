@@ -71,7 +71,7 @@ class TicketController extends Controller
             'caseTypes'  => TicketCaseType::cases(),
             'agents'     => User::role(['agent', 'admin'])->orderBy('name')->get(),
             'requesters' => User::orderBy('name')->get(),
-            'metrics'    => $user->isAgent() ? $this->service->metrics() : null,
+            'metrics'    => $user->isAgent() ? $this->service->metrics($user) : $this->service->metricsRequester($user),
         ]);
     }
 
@@ -148,7 +148,7 @@ class TicketController extends Controller
         try {
             $this->service->transition(
                 $ticket,
-                TicketStatus::from($request->validated('status')),
+                TicketStatusNew::from($request->validated('status')),
                 $request->user()
             );
         } catch (\DomainException $e) {

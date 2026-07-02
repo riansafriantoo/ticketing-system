@@ -6,7 +6,7 @@
 
 @section('header-actions')
 @if(auth()->user()->isAgent() && $metrics)
-<div class="flex items-center gap-4 mr-2">
+<div class="flex items-center gap-5 mr-2">
     <div class="text-center">
         <p class="text-xs text-gray-400">Open</p>
         <p class="text-sm font-semibold text-gray-900">{{ $metrics['total_open'] }}</p>
@@ -19,6 +19,13 @@
         <p class="text-xs text-gray-400">Resolved today</p>
         <p class="text-sm font-semibold text-green-600">{{ $metrics['resolved_today'] }}</p>
     </div>
+    <button type="button" onclick="openExportModal()"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
+    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    Export
+    </button>
 </div>
 @endif
 @endsection
@@ -41,7 +48,6 @@
             @endforeach
         </select>
 
-        @php dd($priorities); @endphp
         <select name="priority" class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-400 bg-white">
             <option value="">All priorities</option>
             @foreach($priorities as $p)

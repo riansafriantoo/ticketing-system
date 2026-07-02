@@ -27,7 +27,7 @@ class AdminController extends Controller
     public function dashboard(Request $request): View
     {
         $user = $request->user();
-        $metrics = $this->service->metrics();
+        $metrics = $this->service->metrics($user);
         $metricsRequester = $this->service->metricsRequester($user);
         
         $byStatus = Ticket::selectRaw('status, COUNT(*) as count')

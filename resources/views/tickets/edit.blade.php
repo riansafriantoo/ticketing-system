@@ -32,7 +32,7 @@
                     <select name="case_type" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand-400 bg-white @error('case_type') border-red-400 @enderror">
                         <option value="">Select Case Type…</option>
                         @foreach($caseTypes as $c)
-                        <option value="{{ $c->value }}" {{ old('case_type') === $c->value ? 'selected' : '' }}>
+                        <option value="{{ $c->value }}" {{ old('case_type', $ticket->case_type->value) === $c->value ? 'selected' : '' }}>
                             {{ $c->label() }}
                         </option>
                         @endforeach
