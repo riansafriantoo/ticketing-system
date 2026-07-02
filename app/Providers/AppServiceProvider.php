@@ -9,24 +9,15 @@ use App\Policies\CommentPolicy;
 use App\Policies\AssetPolicy;
 use App\Services\AssetService;
 use App\Policies\TicketPolicy;
-use App\Services\NotificationService;
 use App\Services\TicketService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Carbon\Carbon;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void
-    {
-        // Bind services as singletons
-        $this->app->singleton(NotificationService::class);
-        $this->app->singleton(AssetService::class);
-        $this->app->singleton(TicketService::class, function ($app) {
-            return new TicketService($app->make(NotificationService::class));
-        });
-    }
 
     public function boot(): void
     {

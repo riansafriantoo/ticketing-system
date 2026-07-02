@@ -85,6 +85,7 @@ class DatabaseSeeder extends Seeder
             for ($i = 0; $i < $count; $i++) {
                 $priority = collect(TicketPriority::cases())->random();
                 $status   = collect(TicketStatus::cases())->random();
+                $case_type   = collect(TicketCaseType::cases())->random();
                 $asset    = rand(0, 1) ? $ticketAssets->random() : null;
 
                 $ticket = Ticket::create([
@@ -92,7 +93,7 @@ class DatabaseSeeder extends Seeder
                     'description'  => fake()->paragraphs(3, true),
                     'status'       => $status,
                     'priority'     => $priority,
-                    'case_type'    => collect(TicketCaseType::cases())->random(),
+                    'case_type'    => $case_type,
                     'requester_id' => $requester->id,
                     'assignee_id'  => $agents->random()->id,
                     'asset_id'     => $asset?->id,

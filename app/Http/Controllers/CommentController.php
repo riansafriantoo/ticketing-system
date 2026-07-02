@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Activity;
+use App\Services\TicketService;
 use App\Models\Attachment;
 use App\Models\Comment;
 use App\Models\Ticket;
@@ -36,14 +37,14 @@ class CommentController extends Controller
         $isInternal = $request->user()->isAgent() && ($data['is_internal'] ?? false);
 
         // ── Create comment ────────────────────────────────────────────────────
-        $comment = $ticket->comments()->create([
-            'user_id'     => $request->user()->id,
-            'body'        => $data['body'],
-            'is_internal' => $isInternal,
-        ]);
+        $comment =  app(TicketService::class)->addComment(
+                        $ticket,            // Ticket $ticket
+                        $request->user(),   // User $author
+                        $data['body'],       // string $body
+                        $isInternal,         // bool $isInternal
+                    );
 
         // ── Store attachments ─────────────────────────────────────────────────
-        // Use $request->file() — NOT $request->validated() — to get UploadedFile objects.
         $files = $request->file('attachments') ?? [];
         $this->storeCommentAttachments($comment, $ticket, $files, $request->user()->id);
 
@@ -69,7 +70,6 @@ class CommentController extends Controller
     {
         $this->authorize('delete', $comment);
 
-        // Remove files from disk before deleting the record
         foreach ($comment->attachments as $attachment) {
             $this->deleteFromDisk($attachment);
         }

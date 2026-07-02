@@ -6,6 +6,7 @@ enum TicketStatusNew: string
 {
     case Open       = 'open';
     case InProgress = 'in_progress';
+    case OnHold     = 'on_hold';
     case Closed     = 'closed';
 
     public function label(): string
@@ -13,6 +14,7 @@ enum TicketStatusNew: string
         return match($this) {
             self::Open       => 'Open',
             self::InProgress => 'In Progress',
+            self::OnHold     => 'On Hold',
             self::Closed     => 'Closed',
         };
     }
@@ -22,6 +24,7 @@ enum TicketStatusNew: string
         return match($this) {
             self::Open       => 'blue',
             self::InProgress => 'amber',
+            self::OnHold     => 'gray',
             self::Closed     => 'slate',
         };
     }
@@ -35,8 +38,9 @@ enum TicketStatusNew: string
     public function transitions(): array
     {
         return match($this) {
-            self::Open       => [self::InProgress, self::Closed],
-            self::InProgress => [self::Open, self::Closed],
+            self::Open       => [self::InProgress, self::Closed, self::OnHold],
+            self::InProgress => [self::Open, self::Closed, self::OnHold],
+            self::OnHold     => [self::Open, self::InProgress, self::Closed],
             self::Closed     => [self::InProgress, self::Open],
         };
     }
