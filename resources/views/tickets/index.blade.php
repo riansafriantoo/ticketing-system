@@ -5,8 +5,8 @@
 @section('subheading', $tickets->total() . ' total')
 
 @section('header-actions')
-@if(auth()->user()->isAgent() && $metrics)
 <div class="flex items-center gap-5 mr-2">
+@if(auth()->user()->isAgent() && $metrics)
     <div class="text-center">
         <p class="text-xs text-gray-400">Open</p>
         <p class="text-sm font-semibold text-gray-900">{{ $metrics['total_tickets'] }}</p>
@@ -19,6 +19,7 @@
         <p class="text-xs text-gray-400">Closed</p>
         <p class="text-sm font-semibold text-green-600">{{ $metrics['resolved_today'] }}</p>
     </div>
+@endif
     <button type="button" onclick="openExportModal()"
         class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -27,7 +28,6 @@
     Export
     </button>
 </div>
-@endif
 @endsection
 
 @section('content')
