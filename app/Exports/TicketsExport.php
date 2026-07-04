@@ -46,11 +46,9 @@ class TicketsExport implements
             'Requester',
             'Requester Email',
             'Assignee',
-            'Asset Tag',
             'Created At',
-            'SLA Due At',
-            'Resolved At',
             'Closed At',
+            'Work Duration',
         ];
     }
 
@@ -68,11 +66,9 @@ class TicketsExport implements
             $ticket->requester?->name ?? '—',
             $ticket->requester?->email ?? '—',
             $ticket->assignee?->name ?? 'Unassigned',
-            $ticket->asset?->asset_tag ?? '—',
             $ticket->created_at?->format('Y-m-d H:i'),
-            $ticket->sla_due_at?->format('Y-m-d H:i') ?? '—',
-            $ticket->resolved_at?->format('Y-m-d H:i') ?? '—',
             $ticket->closed_at?->format('Y-m-d H:i')   ?? '—',
+            $ticket->closed_at?->diffForHumans($ticket->created_at, true) ?? '—',
         ];
     }
 
@@ -82,7 +78,7 @@ class TicketsExport implements
      */
     public function styles(Worksheet $sheet): array
     {
-        $sheet->getStyle('A1:O1')->applyFromArray([
+        $sheet->getStyle('A1:J1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
                 'fillType'   => Fill::FILL_SOLID,
@@ -93,7 +89,7 @@ class TicketsExport implements
 
         $sheet->getStyle('A:A')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('C:E')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('J:O')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('J:M')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Freeze the header row so it stays visible while scrolling
         $sheet->freezePane('A2');
@@ -121,6 +117,7 @@ class TicketsExport implements
             'J' => 17,  // Created At
             'K' => 17,  // SLA Due At
             'L' => 17,  // Resolved At
+            'M' => 17,  // Closed At
         ];
     }
 

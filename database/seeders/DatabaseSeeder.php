@@ -6,7 +6,7 @@ use App\Enums\AssetCategory;
 use App\Enums\AssetStatus;
 use App\Enums\TicketCaseType;
 use App\Enums\TicketPriority;
-use App\Enums\TicketStatus;
+use App\Enums\TicketStatusNew;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\AssetMaintenance;
@@ -84,7 +84,7 @@ class DatabaseSeeder extends Seeder
             $count = rand(1, 5);
             for ($i = 0; $i < $count; $i++) {
                 $priority = collect(TicketPriority::cases())->random();
-                $status   = collect(TicketStatus::cases())->random();
+                $status   = collect(TicketStatusNew::cases())->random();
                 $case_type   = collect(TicketCaseType::cases())->random();
                 $asset    = rand(0, 1) ? $ticketAssets->random() : null;
 
@@ -98,7 +98,6 @@ class DatabaseSeeder extends Seeder
                     'assignee_id'  => $agents->random()->id,
                     'asset_id'     => $asset?->id,
                     'sla_due_at'   => now()->addHours($priority->slaHours()),
-                    'resolved_at'  => $status === TicketStatus::Resolved ? now()->subHours(rand(1, 48)) : null,
                 ]);
 
                 // Add comments
