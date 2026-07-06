@@ -33,7 +33,6 @@ class SendTicketCreatedEmail implements ShouldQueue
 
         foreach ($recipients as $user) {
             try {
-                dd($recipients);
                 Mail::to($user->email)->send(new TicketCreatedMail($event->ticket));
             } catch (\Throwable $e) {
                 // Log and continue — one bad email address shouldn't
