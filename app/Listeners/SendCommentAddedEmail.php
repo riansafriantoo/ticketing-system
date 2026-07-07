@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\CommentAdded;
+use App\Listeners\Concerns\PreventsDuplicateNotification;
 use App\Mail\CommentAddedMail;
 use App\Services\NotificationRecipientResolver;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Mail;
 
 class SendCommentAddedEmail implements ShouldQueue
 {
+    use PreventsDuplicateNotification;
+
     public string $queue = 'emails';
     public int $tries = 3;
     public int $backoff = 30;
@@ -23,20 +26,38 @@ class SendCommentAddedEmail implements ShouldQueue
     {
         $recipients = $this->resolver->forCommentAdded($event->ticket, $event->comment);
 
-        foreach ($recipients as $user) {
-            try {
-                Mail::to($user->email)->send(new CommentAddedMail(
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
+        $fingerprint = $this->fingerprintCommentAdded(
+            $event->ticket->id,
+            $event->comment->id,
+        );
+
+        if ($this->alreadySent($fingerprint, 'comment_added', $recipients, $event->ticket->id)) {
+            return;
+        }
+
+        $toList = $recipients
+            ->map(fn ($u) => ['email' => $u->email, 'name' => $u->name])
+            ->toArray();
+
+        try {
+            Mail::to($toList)->send(
+                new CommentAddedMail(
                     $event->ticket,
                     $event->comment,
-                ));
-            } catch (\Throwable $e) {
-                Log::error('CommentAdded email failed', [
-                    'ticket_id'  => $event->ticket->id,
-                    'comment_id' => $event->comment->id,
-                    'user_id'    => $user->id,
-                    'error'      => $e->getMessage(),
-                ]);
-            }
+                    $recipients,
+                )
+            );
+        } catch (\Throwable $e) {
+            Log::error('CommentAdded email failed', [
+                'ticket_id'  => $event->ticket->id,
+                'comment_id' => $event->comment->id,
+                'recipients' => $recipients->pluck('email')->toArray(),
+                'error'      => $e->getMessage(),
+            ]);
         }
     }
 

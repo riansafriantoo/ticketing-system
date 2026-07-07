@@ -4,29 +4,25 @@ namespace App\Mail;
 
 use App\Models\Comment;
 use App\Models\Ticket;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Collection;
 
-class CommentAddedMail extends Mailable implements ShouldQueue
+class CommentAddedMail extends Mailable 
 {
-    use Queueable, SerializesModels;
-
-    public int $tries = 3;
-    public int $backoff = 30;
-
+    use SerializesModels;
+    
     public function __construct(
         public readonly Ticket $ticket,
         public readonly Comment $comment,
+        public readonly Collection $recipients,   // ← was missing
     ) {}
 
     public function build(): self
     {
-        $prefix = $this->comment->is_internal ? '[Internal] ' : '';
-
         return $this
-            ->subject("[{$this->ticket->ticketNumber()}] {$prefix}New reply: {$this->ticket->subject}")
+            ->subject("Ticketing System - New reply on {$this->ticket->ticketNumber()}")
+            //->cc('helpdesk.support@fc-network.com')
             ->markdown('emails.comment-added', [
                 'ticket'  => $this->ticket,
                 'comment' => $this->comment,

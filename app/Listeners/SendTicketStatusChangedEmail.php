@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\TicketStatusChanged;
+use App\Listeners\Concerns\PreventsDuplicateNotification;
 use App\Mail\TicketStatusChangedMail;
 use App\Services\NotificationRecipientResolver;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Mail;
 
 class SendTicketStatusChangedEmail implements ShouldQueue
 {
+    use PreventsDuplicateNotification;
+
     public string $queue = 'emails';
     public int $tries = 3;
     public int $backoff = 30;
@@ -23,20 +26,38 @@ class SendTicketStatusChangedEmail implements ShouldQueue
     {
         $recipients = $this->resolver->forStatusChanged($event->ticket, $event->changedBy);
 
-        foreach ($recipients as $user) {
-            try {
-                Mail::to($user->email)->send(new TicketStatusChangedMail(
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
+        $fingerprint = $this->fingerprintStatusChanged(
+            $event->ticket->id,
+            $event->newStatus->value,
+        );
+
+        if ($this->alreadySent($fingerprint, 'ticket_status_changed', $recipients, $event->ticket->id)) {
+            return;
+        }
+
+        $toList = $recipients
+            ->map(fn ($u) => ['email' => $u->email, 'name' => $u->name])
+            ->toArray();
+
+        try {
+            Mail::to($toList)->send(
+                new TicketStatusChangedMail(
                     $event->ticket,
                     $event->oldStatus,
                     $event->newStatus,
-                ));
-            } catch (\Throwable $e) {
-                Log::error('TicketStatusChanged email failed', [
-                    'ticket_id' => $event->ticket->id,
-                    'user_id'   => $user->id,
-                    'error'     => $e->getMessage(),
-                ]);
-            }
+                    $recipients,
+                )
+            );
+        } catch (\Throwable $e) {
+            Log::error('TicketStatusChanged email failed', [
+                'ticket_id'  => $event->ticket->id,
+                'recipients' => $recipients->pluck('email')->toArray(),
+                'error'      => $e->getMessage(),
+            ]);
         }
     }
 

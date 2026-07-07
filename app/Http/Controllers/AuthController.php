@@ -27,6 +27,13 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Invalid Username/Password.'])->withInput();
         }
 
+        $user = Auth::user();
+
+        if (!$user->is_active) {
+            Auth::logout();
+            return back()->withErrors(['email' => 'This account has been deactivated.']);
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('admin.dashboard'));

@@ -1,5 +1,5 @@
 @component('mail::message')
-# Ticket assigned
+# Ticket Assigned
 
 Hi,
 
@@ -17,9 +17,9 @@ Ticket **{{ $ticket->ticketNumber() }}** has been unassigned.
 
 | | |
 |---|---|
-| **Priority** | {{ $ticket->priority->label() }} |
-| **Requester** | {{ $ticket->requester->name }} |
-| **SLA due by** | {{ $ticket->sla_due_at?->format('M d, Y H:i') ?? '—' }} |
+| **Priority** | {{ $ticket->priority instanceof \App\Enums\TicketPriority ? $ticket->priority->label() : ucfirst($ticket->priority) }} |
+| **Requester** | {{ $ticket->requester?->name ?? '—' }} |
+| **Assigned to** | {{ $newAssignee?->name ?? 'Unassigned' }} |
 
 @component('mail::button', ['url' => route('tickets.show', $ticket)])
 View Ticket

@@ -1,6 +1,12 @@
 @component('mail::message')
 # New ticket created
 
+@php
+    $priorityLabel = $ticket->priority instanceof \App\Enums\TicketPriority ? $ticket->priority->label() : ucfirst($ticket->priority);
+
+    $caseTypeLabel = $ticket->case_type instanceof \App\Enums\TicketCaseType ? $ticket->case_type->label() : ucfirst($ticket->case_type);
+@endphp
+
 Hi {{ $ticket->requester->name }},
 
 Your ticket **{{ $ticket->ticketNumber() }}** has been created and is now in the queue.
@@ -13,9 +19,8 @@ Your ticket **{{ $ticket->ticketNumber() }}** has been created and is now in the
 
 | | |
 |---|---|
-| **Priority** | {{ $ticket->priority->label() }} |
-| **Category** | {{ $ticket->category->label() }} |
-| **SLA due by** | {{ $ticket->sla_due_at?->format('M d, Y H:i') ?? '—' }} |
+| **Priority: ** | {{ $priorityLabel }} |
+| **Case Type: ** | {{ $caseTypeLabel }} |
 
 @component('mail::button', ['url' => route('tickets.show', $ticket)])
 View Ticket

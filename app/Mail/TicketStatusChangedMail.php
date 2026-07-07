@@ -3,30 +3,27 @@
 namespace App\Mail;
 
 use App\Enums\TicketStatusNew;
-use App\Enums\TicketStatus;
 use App\Models\Ticket;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Collection;
 
-class TicketStatusChangedMail extends Mailable implements ShouldQueue
+class TicketStatusChangedMail extends Mailable
 {
-    use Queueable, SerializesModels;
-
-    public int $tries = 3;
-    public int $backoff = 30;
+    use SerializesModels;
 
     public function __construct(
         public readonly Ticket $ticket,
         public readonly TicketStatusNew $oldStatus,
         public readonly TicketStatusNew $newStatus,
+        public readonly Collection $recipients,   // ← was missing
     ) {}
 
     public function build(): self
     {
         return $this
-            ->subject("[{$this->ticket->ticketNumber()}] Status updated: {$this->newStatus->label()}")
+            ->subject("Ticketing System - Status updated on [{$this->ticket->ticketNumber()}]")
+            //->cc('helpdesk.support@fc-network.com')
             ->markdown('emails.ticket-status-changed', [
                 'ticket'    => $this->ticket,
                 'oldStatus' => $this->oldStatus,
