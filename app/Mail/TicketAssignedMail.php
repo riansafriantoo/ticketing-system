@@ -4,27 +4,25 @@ namespace App\Mail;
 
 use App\Models\Ticket;
 use App\Models\User;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Collection;
 
-class TicketAssignedMail extends Mailable implements ShouldQueue
+class TicketAssignedMail extends Mailable
 {
-    use Queueable, SerializesModels;
-
-    public int $tries = 3;
-    public int $backoff = 30;
+    use SerializesModels;
 
     public function __construct(
         public readonly Ticket $ticket,
         public readonly ?User $newAssignee,
+        public readonly Collection $recipients,   // ← was missing
     ) {}
 
     public function build(): self
     {
         return $this
-            ->subject("[{$this->ticket->ticketNumber()}] Assigned: {$this->ticket->subject}")
+            ->subject("Ticketing System - Ticket {$this->ticket->ticketNumber()} assigned to: {$this->ticket->subject}")
+            //->cc('helpdesk.support@fc-network.com')
             ->markdown('emails.ticket-assigned', [
                 'ticket'      => $this->ticket,
                 'newAssignee' => $this->newAssignee,

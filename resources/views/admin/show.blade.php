@@ -138,40 +138,39 @@
                 Edit User
             </a>
 
-            @if($user->id !== auth()->id())
-            {{-- <form method="POST" action="{{ route('users.toggle-status', $user) }}">
-                @csrf @method('PATCH')
-                <button type="submit"
-                        class="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs font-medium rounded-lg border transition-colors
-                        {{ $user->is_active
-                            ? 'text-amber-700 border-amber-200 hover:bg-amber-50'
-                            : 'text-green-700 border-green-200 hover:bg-green-50' }}">
-                    @if($user->is_active)
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
-                    </svg>
-                    Deactivate Account
-                    @else
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    Activate Account
-                    @endif
-                </button>
-            </form> --}}
-
-            <form method="POST" action="{{ route('users.destroy', $user) }}"
-                  onsubmit="return confirm('Permanently delete {{ addslashes($user->name) }}?')">
-                @csrf @method('DELETE')
-                <button type="submit"
-                        class="flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs font-medium text-red-600 border border-red-100 rounded-lg hover:bg-red-50">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                    </svg>
-                    Delete User
-                </button>
-            </form>
+        @if($user->id !== auth()->id())
+            @if($user->is_active)
+                    <form method="POST" action="{{ route('users.destroy', $user) }}"
+                        onsubmit="return confirm(
+                            'Deactivate {{ $user->name }}?\n\n' +
+                            'Their account will be disabled and any open tickets ' +
+                            'reassigned to an admin. Their history is preserved ' +
+                            'and this can be reversed later.'
+                        )">
+                        @csrf @method('DELETE')
+                        <button type="submit"
+                                class="inline-flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs font-medium text-amber-600 border border-amber-200 rounded-lg hover:bg-amber-50 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                            </svg>
+                            Deactivate
+                        </button>
+                    </form>
+                @else
+                {{-- ── Reactivate button (shown for INACTIVE users) ─────────────────── --}}
+                <form method="POST" action="{{ route('users.reactivate', $user) }}"
+                    onsubmit="return confirm('Reactivate {{ $user->name }}? They will be able to log in again.')">
+                    @csrf @method('PATCH')
+                    <button type="submit"
+                            class="inline-flex items-center justify-center gap-1.5 w-full px-3 py-2 text-xs font-medium text-green-600 border border-green-200 rounded-lg hover:bg-green-50 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                        </svg>
+                        Reactivate
+                    </button>
+                </form>
             @endif
+        @endif
         </div>
     </aside>
 </div>

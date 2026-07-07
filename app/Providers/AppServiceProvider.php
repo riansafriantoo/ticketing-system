@@ -2,31 +2,32 @@
 
 namespace App\Providers;
 
-use App\Models\Comment;
-use App\Models\Asset;
-use App\Models\Ticket;
-use App\Policies\CommentPolicy;
-use App\Policies\AssetPolicy;
-use App\Services\AssetService;
-use App\Policies\TicketPolicy;
-use App\Services\TicketService;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Events\CommentAdded;
+use App\Events\TicketAssigned;
+use App\Events\TicketCreated;
+use App\Events\TicketStatusChanged;
+use App\Listeners\SendCommentAddedEmail;
+use App\Listeners\SendTicketAssignedEmail;
+use App\Listeners\SendTicketCreatedEmail;
+use App\Listeners\SendTicketStatusChangedEmail;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use Carbon\Carbon;
 
 class AppServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        //
+    }
 
     public function boot(): void
     {
-        // Strict mode in development — catch lazy loading, missing attributes, etc.
         Model::shouldBeStrict(!app()->isProduction());
 
-        // Register policies
-        Gate::policy(Ticket::class, TicketPolicy::class);
-        Gate::policy(Comment::class, CommentPolicy::class);
-        Gate::policy(Asset::class, AssetPolicy::class);
+        // Event::listen(TicketCreated::class, SendTicketCreatedEmail::class);
+        // Event::listen(TicketStatusChanged::class, SendTicketStatusChangedEmail::class);
+        // Event::listen(TicketAssigned::class, SendTicketAssignedEmail::class);
+        // Event::listen(CommentAdded::class, SendCommentAddedEmail::class);
     }
 }

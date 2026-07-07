@@ -71,6 +71,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('users/{user}',        [AdminController::class, 'destroy'])->name('users.destroy');
         Route::patch('/users/{user}/role', [AdminController::class, 'updateUserRole'])->name('users.role');
         Route::patch('users/{user}/toggle-status', [AdminController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::patch('users/{user}/reactivate', [AdminController::class, 'reactivate'])->name('users.reactivate');
     });
 });
 

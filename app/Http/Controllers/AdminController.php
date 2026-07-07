@@ -206,9 +206,9 @@ class AdminController extends Controller
         if ($user->id === auth()->id()) {
             return back()->with('error', 'You cannot deactivate your own account.');
         }
-
+ 
         $user->update(['is_active' => !$user->is_active]);
-
+ 
         $label = $user->is_active ? 'activated' : 'deactivated';
 
         return back()->with('success', "User \"{$user->name}\" {$label}.");
@@ -218,16 +218,34 @@ class AdminController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
-        if ($user->id === auth()->id()) {
-            return back()->with('error', 'You cannot delete your own account.');
-        }
 
         $name = $user->name;
-        $user->delete();
+
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'You cannot deactivate your own account.');
+        }
+ 
+        if (!$user->is_active) {
+            return redirect()->route('admin.users.index')
+                ->with('success', "User \"{$user->name}\" is already deactivated.");
+        }
+ 
+        $user->update(['is_active' => false]);
 
         return redirect()
             ->route('users.index')
-            ->with('success', "User \"{$name}\" deleted.");
+            ->with('success', "User \"{$name}\" deactivated.");
+    }
+
+    public function reactivate(User $user): RedirectResponse
+    {
+        if ($user->is_active) {
+            return back()->with('success', "User \"{$user->name}\" is already active.");
+        }
+ 
+        $user->update(['is_active' => true]);
+ 
+        return back()->with('success', "User \"{$user->name}\" reactivated.");
     }
 
     public function updateUserRole(Request $request, User $user): \Illuminate\Http\RedirectResponse

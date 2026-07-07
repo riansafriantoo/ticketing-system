@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use App\Services\UserLifecycleService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Exceptions\UserDeletionException;
 use App\Services\TicketService;
 
 class AdminUserController extends Controller
@@ -17,7 +19,8 @@ class AdminUserController extends Controller
     use AuthorizesRequests;
     
     public function __construct(
-        private readonly TicketService $service
+        private readonly TicketService $service,
+        private readonly UserLifecycleService $lifecycle
     ) {}   
 
     // ── List all users ────────────────────────────────────────────────────────
@@ -151,27 +154,28 @@ class AdminUserController extends Controller
         if ($user->id === auth()->id()) {
             return back()->with('error', 'You cannot deactivate your own account.');
         }
-
+ 
         $user->update(['is_active' => !$user->is_active]);
-
+ 
         $label = $user->is_active ? 'activated' : 'deactivated';
-
+ 
         return back()->with('success', "User \"{$user->name}\" {$label}.");
     }
-
-    // ── Hard delete ───────────────────────────────────────────────────────────
-
+ 
     public function destroy(User $user): RedirectResponse
     {
         if ($user->id === auth()->id()) {
-            return back()->with('error', 'You cannot delete your own account.');
+            return back()->with('error', 'You cannot deactivate your own account.');
         }
-
-        $name = $user->name;
-        $user->delete();
-
-        return redirect()
-            ->route('admin.users.index')
-            ->with('success', "User \"{$name}\" deleted.");
+ 
+        if (!$user->is_active) {
+            return redirect()->route('admin.users.index')
+                ->with('success', "User \"{$user->name}\" is already deactivated.");
+        }
+ 
+        $user->update(['is_active' => false]);
+ 
+        return redirect()->route('admin.users.index')
+            ->with('success', "User \"{$user->name}\" deactivated.");
     }
 }

@@ -29,29 +29,29 @@ use Illuminate\Support\Collection;
  */
 class NotificationRecipientResolver
 {
-    /**
-     * Ticket created — notify the requester (confirmation) and every
-     * admin (so someone knows a new ticket needs triage). There's no
-     * assignee yet at creation time.
-     */
     public function forTicketCreated(Ticket $ticket, User $createdBy): Collection
     {
+        // Ensure requester is loaded — the queued listener re-fetches
+        // the Ticket model from DB without relationships, so this guard
+        // is necessary whenever this method runs from a queued job.
+        $ticket->loadMissing('requester');
+
         $admins = User::role('admin')->get();
 
+        // return $this->merge([$ticket->requester], $admins)
+        //     ->reject(fn (User $u) => $u->id === $createdBy->id)
+        //     ->pipe(fn ($c) => $this->finalize($c));
+
         return $this->merge([$ticket->requester], $admins)
-            ->reject(fn (User $u) => $u->id === $createdBy->id)
             ->pipe(fn ($c) => $this->finalize($c));
     }
 
-    /**
-     * Status changed — notify the requester (always — they're waiting
-     * on this ticket) and the assignee if one exists and isn't the
-     * person who made the change themselves.
-     */
     public function forStatusChanged(Ticket $ticket, User $changedBy): Collection
     {
+        $ticket->loadMissing(['requester', 'assignee']);
+
         return $this->merge([$ticket->requester, $ticket->assignee])
-            ->reject(fn (User $u) => $u->id === $changedBy->id)
+            // ->reject(fn (User $u) => $u->id === $changedBy->id)
             ->pipe(fn ($c) => $this->finalize($c));
     }
 
@@ -66,8 +66,10 @@ class NotificationRecipientResolver
      */
     public function forTicketAssigned(Ticket $ticket, ?User $newAssignee, User $assignedBy): Collection
     {
+        $ticket->loadMissing('requester');
+
         return $this->merge([$newAssignee, $ticket->requester])
-            ->reject(fn (User $u) => $u->id === $assignedBy->id)
+            // ->reject(fn (User $u) => $u->id === $assignedBy->id)
             ->pipe(fn ($c) => $this->finalize($c));
     }
 
@@ -82,12 +84,12 @@ class NotificationRecipientResolver
      */
     public function forCommentAdded(Ticket $ticket, Comment $comment): Collection
     {
-        $candidates = $comment->is_internal
-            ? [$ticket->assignee]                    // internal note → assignee only
-            : [$ticket->requester, $ticket->assignee]; // public reply → both
+        $ticket->loadMissing(['requester', 'assignee']);
+
+        $candidates = $comment->is_internal ? [$ticket->assignee] : [$ticket->requester, $ticket->assignee];
 
         return $this->merge($candidates)
-            ->reject(fn (User $u) => $u->id === $comment->user_id)
+            // ->reject(fn (User $u) => $u->id === $comment->user_id)
             ->pipe(fn ($c) => $this->finalize($c));
     }
 
