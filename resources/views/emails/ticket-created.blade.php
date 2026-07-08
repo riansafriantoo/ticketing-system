@@ -19,8 +19,8 @@ Your ticket **{{ $ticket->ticketNumber() }}** has been created and is now in the
 
 | | |
 |---|---|
-| **Priority: ** | {{ $priorityLabel }} |
-| **Case Type: ** | {{ $caseTypeLabel }} |
+| **Priority**:  | {{ $priorityLabel }} |
+| **Case Type**:  | {{ $caseTypeLabel }} |
 
 @component('mail::button', ['url' => route('tickets.show', $ticket)])
 View Ticket
