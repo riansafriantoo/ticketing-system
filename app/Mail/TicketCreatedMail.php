@@ -19,7 +19,7 @@ class TicketCreatedMail extends Mailable
     public function build(): self
     {
         return $this
-            ->subject("Ticketing System - Ticket has been created: {$this->ticket->ticketNumber()} / {$this->ticket->subject}")
+            ->subject("Ticketing System - New ticket has been created with this ticket number : {{$this->ticket->ticketNumber()}}")
             //->cc('helpdesk.support@fc-network.com')
             ->markdown('emails.ticket-created', [
                 'ticket' => $this->ticket,

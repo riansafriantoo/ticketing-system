@@ -17,9 +17,9 @@ Ticket **{{ $ticket->ticketNumber() }}** has been unassigned.
 
 | | |
 |---|---|
-| **Priority** | {{ $ticket->priority instanceof \App\Enums\TicketPriority ? $ticket->priority->label() : ucfirst($ticket->priority) }} |
-| **Requester** | {{ $ticket->requester?->name ?? '—' }} |
-| **Assigned to** | {{ $newAssignee?->name ?? 'Unassigned' }} |
+| **Priority**:  | {{ $ticket->priority instanceof \App\Enums\TicketPriority ? $ticket->priority->label() : ucfirst($ticket->priority) }} |
+| **Requester**:  | {{ $ticket->requester?->name ?? '—' }} |
+| **Assigned to**:  | {{ $newAssignee?->name ?? 'Unassigned' }} |
 
 @component('mail::button', ['url' => route('tickets.show', $ticket)])
 View Ticket

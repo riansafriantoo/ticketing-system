@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\TicketStatus;
 use App\Enums\TicketStatusNew;
+use App\Enums\TicketPriority;
 use App\Events\CommentAdded;
 use App\Events\TicketAssigned;
 use App\Events\TicketCreated;
@@ -50,25 +51,20 @@ class TicketService
     public function update(Ticket $ticket, array $data, User $actor): Ticket
     {
         return DB::transaction(function () use ($ticket, $data, $actor) {
-            if (
-                isset($data['priority']) &&
-                $data['priority'] !== $ticket->priority->value
-            ) {
+            if (isset($data['priority']) && $data['priority'] !== $ticket->priority->value) {
+                $newPriority = TicketPriority::from($data['priority']);
+ 
                 $this->logActivity($ticket, $actor, 'priority_changed', [
-                    'from' => $ticket->priority->value,
-                    'to'   => $data['priority'],
+                    'from' => $ticket->priority->label(),
+                    'to'   => $newPriority->label(),
                 ]);
             }
-
+ 
             $ticket->update($data);
             return $ticket->fresh();
         });
     }
 
-    /**
-     * Transition a ticket's status, with hold-time tracking and
-     * email notification on every status change.
-     */
     public function transition(Ticket $ticket, TicketStatusNew $newStatus, User $actor, ?string $holdReason = null): Ticket
     {
         if (!$ticket->canTransitionTo($newStatus)) {

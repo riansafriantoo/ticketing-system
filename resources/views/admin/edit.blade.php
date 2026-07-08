@@ -48,9 +48,9 @@
                     <select id="department" name="department" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-200">
                         <option value="">Select company</option>
                         @foreach($departments as $dept)
-                        <option value="{{ $dept->value }}" {{ old('department') === $dept->value ? 'selected' : '' }}>
+                        <option value="{{ $dept->value }}" {{ old('department', $user->department) === $dept->value ? 'selected' : '' }}>
                             {{ $dept->label() }}
-                        </option>
+                        </option>d
                         @endforeach
                     </select>
                     @error('department')
@@ -114,11 +114,11 @@
  
                         <p class="text-xs text-gray-500 mt-0.5">
                             @if($role->name === 'admin')
-                                Full system access — manage users, view all tickets, access dashboard and reports.
+                                Full system access — manage users, view all tickets, and settings.
                             @elseif($role->name === 'agent')
-                                Support staff — can view, assign, update, and resolve any ticket.
+                                Support staff — can view, assign, update, access dashboard and resolve any ticket.
                             @else
-                                End user — can submit tickets and track their own requests only.
+                                End user — can submit tickets, access dashboard and track their own requests only.
                             @endif
                         </p>
                     </div>

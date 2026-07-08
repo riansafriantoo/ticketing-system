@@ -22,7 +22,7 @@ class TicketStatusChangedMail extends Mailable
     public function build(): self
     {
         return $this
-            ->subject("Ticketing System - Status updated on [{$this->ticket->ticketNumber()}]")
+            ->subject("Ticketing System - Status changed for ticket {$this->ticket->ticketNumber()}")
             //->cc('helpdesk.support@fc-network.com')
             ->markdown('emails.ticket-status-changed', [
                 'ticket'    => $this->ticket,
