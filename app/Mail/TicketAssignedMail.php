@@ -21,7 +21,7 @@ class TicketAssignedMail extends Mailable
     public function build(): self
     {
         return $this
-            ->subject("Ticketing System - Ticket {$this->ticket->ticketNumber()} assigned to: {$this->newAssignee}")
+            ->subject("Ticketing System - Ticket {$this->ticket->ticketNumber()} assigned to {$this->newAssignee?->name}")
             //->cc('helpdesk.support@fc-network.com')
             ->markdown('emails.ticket-assigned', [
                 'ticket'      => $this->ticket,
