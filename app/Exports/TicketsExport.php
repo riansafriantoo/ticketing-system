@@ -45,7 +45,8 @@ class TicketsExport implements
             'Priority',
             'Requester',
             'Requester Email',
-            'Assignee',
+            'Agent',
+            'Agent Email',
             'Created At',
             'Closed At',
             'Work Duration',
@@ -66,6 +67,7 @@ class TicketsExport implements
             $ticket->requester?->name ?? '—',
             $ticket->requester?->email ?? '—',
             $ticket->assignee?->name ?? 'Unassigned',
+            $ticket->assignee?->email ?? 'Unassigned',
             $ticket->created_at?->format('Y-m-d H:i'),
             $ticket->closed_at?->format('Y-m-d H:i')   ?? '—',
             $ticket->closed_at?->diffForHumans($ticket->created_at, true) ?? '—',
@@ -78,7 +80,7 @@ class TicketsExport implements
      */
     public function styles(Worksheet $sheet): array
     {
-        $sheet->getStyle('A1:J1')->applyFromArray([
+        $sheet->getStyle('A1:L1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
                 'fillType'   => Fill::FILL_SOLID,
@@ -89,7 +91,7 @@ class TicketsExport implements
 
         $sheet->getStyle('A:A')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('C:E')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('J:M')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('J:L')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Freeze the header row so it stays visible while scrolling
         $sheet->freezePane('A2');
@@ -113,11 +115,12 @@ class TicketsExport implements
             'F' => 20,  // Requester
             'G' => 26,  // Requester Email
             'H' => 20,  // Assignee
-            'I' => 13,  // Asset Tag
-            'J' => 17,  // Created At
-            'K' => 17,  // SLA Due At
-            'L' => 17,  // Resolved At
-            'M' => 17,  // Closed At
+            'I' => 26,  // Assignee Email
+            'J' => 13,  // Asset Tag
+            'K' => 17,  // Created At
+            'L' => 17,  // SLA Due At
+            'M' => 17,  // Resolved At
+            'N' => 17,  // Closed At
         ];
     }
 

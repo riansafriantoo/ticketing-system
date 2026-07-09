@@ -26,7 +26,7 @@
         </div>
         <div class="bg-white rounded-xl border border-gray-100 p-4">
             <p class="text-xs text-green-600 mb-1">Closed</p>
-            <p class="text-2xl font-semibold text-green-600">{{ $metrics['resolved_today'] }}</p>
+            <p class="text-2xl font-semibold text-green-600">{{ $metrics['resolved'] }}</p>
             <p class="text-xs text-gray-400 mt-1">Tickets closed</p>
         </div>
     </div>

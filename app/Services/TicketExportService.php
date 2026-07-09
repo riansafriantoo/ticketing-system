@@ -60,8 +60,11 @@ class TicketExportService
      */
     public function buildFilename(array $filters): string
     {
-        $from = $filters['date_from'] ?? null;
-        $to   = $filters['date_to']   ?? null;
+        $from       = $filters['date_from'] ?? null;
+        $to         = $filters['date_to']   ?? null;
+        $status     = $filters['status'] ?? null;
+        $priority   = $filters['priority']   ?? null;
+        $assignee   = $filters['assignee']   ?? null;
 
         if ($from && $to) {
             return "tickets_{$from}_to_{$to}.xlsx";
@@ -75,6 +78,18 @@ class TicketExportService
             return "tickets_until_{$to}.xlsx";
         }
 
-        return 'tickets_all-time.xlsx';
+        if ($status) {
+            return "tickets_status_{$status}.xlsx";
+        }
+
+        if ($priority) {
+            return "tickets_priority_{$priority}.xlsx";
+        }
+
+        if ($assignee) {
+            return "tickets_assignee_{$assignee}.xlsx";
+        }
+
+        return 'tickets_report.xlsx';
     }
 }

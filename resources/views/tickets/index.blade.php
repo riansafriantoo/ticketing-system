@@ -17,7 +17,7 @@
     </div>
     <div class="text-center">
         <p class="text-xs text-gray-400">Closed</p>
-        <p class="text-sm font-semibold text-green-600">{{ $metrics['resolved_today'] }}</p>
+        <p class="text-sm font-semibold text-green-600">{{ $metrics['resolved'] }}</p>
     </div>
 @endif
     <button type="button" onclick="openExportModal()"

@@ -154,10 +154,9 @@ class TicketService
     {
         return [
             'total_open'     => Ticket::whereNotIn('status', [TicketStatus::Resolved, TicketStatus::Closed])->count(),
-            'total_tickets'  => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->count(),
-            'in_progress'    => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->whereIn('status', [TicketStatus::InProgress])->count(),
-            'overdue'        => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->overdue()->count(),
-            'resolved'       => Ticket::join('users', 'tickets.requester_id', '=', 'users.id')->where('users.department', $user->department)->whereIn('status', [TicketStatus::Closed])->count(),
+            'total_tickets'  => Ticket::count(),
+            'in_progress'    => Ticket::whereIn('status', [TicketStatus::InProgress])->count(),
+            'resolved'       => Ticket::whereIn('status', [TicketStatus::Closed])->count(),
             'resolved_today' => Ticket::whereDate('resolved_at', today())->count(),
             'avg_resolution' => round(
                 (float) Ticket::whereNotNull('resolved_at')
