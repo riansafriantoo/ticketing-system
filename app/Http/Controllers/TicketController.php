@@ -35,6 +35,7 @@ class TicketController extends Controller
         $selectedDepartment = $user->department;
         if($user->isAgent()){
             $query = Ticket::with(['requester', 'assignee'])
+                ->when(!$user->isAgent(), fn ($q) => $q->forRequester($user->id))
                 ->when($request->filled('status'),   fn ($q) => $q->where('status', $request->status))
                 ->when($request->filled('priority'),  fn ($q) => $q->where('priority', $request->priority))
                 ->when($request->filled('requester'),  fn ($q) => $q->where('requester_id', $request->requester))
@@ -45,6 +46,7 @@ class TicketController extends Controller
                 ->latest();
         }else{
             $query = Ticket::with(['requester', 'assignee'])
+                ->when(!$user->isAgent(), fn ($q) => $q->forRequester($user->id))
                 ->when($request->filled('status'),   fn ($q) => $q->where('status', $request->status))
                 ->when($request->filled('priority'),  fn ($q) => $q->where('priority', $request->priority))
                 ->when($request->filled('category'),  fn ($q) => $q->where('category', $request->category))
