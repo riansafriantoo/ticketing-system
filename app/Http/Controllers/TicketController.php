@@ -71,8 +71,8 @@ class TicketController extends Controller
             'prioritiesRequester' => TicketPriorityRequester::cases(),
             'categories' => TicketCategory::cases(),
             'caseTypes'  => TicketCaseType::cases(),
-            'agents'     => User::role(['agent', 'admin'])->orderBy('name')->get(),
-            'requesters' => User::orderBy('name')->get(),
+            'agents'     => User::role(['agent', 'admin'])->where('is_active', '1')->orderBy('name')->get(),
+            'requesters' => User::where('is_active', '1')->orderBy('name')->get(),
             'metrics'    => $user->isAgent() ? $this->service->metrics($user) : $this->service->metricsRequester($user),
         ]);
     }
@@ -82,7 +82,7 @@ class TicketController extends Controller
         return view('tickets.create', [
             'priorities' => TicketPriority::cases(),
             'prioritiesRequester' => TicketPriorityRequester::cases(),
-            'agents'  => User::role(['agent', 'admin'])->orderBy('name')->get(),
+            'agents'  => User::role(['agent', 'admin'])->where('is_active', '1')->orderBy('name')->get(),
             'categories' => TicketCategory::cases(),
             'caseTypes' => TicketCaseType::cases(),
         ]);
@@ -119,7 +119,7 @@ class TicketController extends Controller
 
         return view('tickets.show', [
             'ticket'  => $ticket,
-            'agents'  => User::role(['agent', 'admin'])->orderBy('name')->get(),
+            'agents'  => User::role(['agent', 'admin'])->where('is_active', '1')->orderBy('name')->get(),
             'statuses'=> $ticket->status->transitions(),
         ]);
     }
