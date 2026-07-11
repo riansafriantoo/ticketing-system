@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\TicketAssigned;
 use App\Listeners\Concerns\PreventsDuplicateNotification;
+use App\Listeners\Concerns\ReliableMailSender;
 use App\Mail\TicketAssignedMail;
 use App\Services\NotificationRecipientResolver;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Mail;
 class SendTicketAssignedEmail implements ShouldQueue
 {
     use PreventsDuplicateNotification;
+    use ReliableMailSender;
 
     public string $queue = 'emails';
     public int $tries = 3;
@@ -47,25 +49,13 @@ class SendTicketAssignedEmail implements ShouldQueue
             return;
         }
 
-        $toList = $recipients
-            ->map(fn ($u) => ['email' => $u->email, 'name' => $u->name])
-            ->toArray();
+        $this->sendToEach(
+            recipients: $recipients,
+            mailable:   new TicketAssignedMail($event->ticket, $event->newAssignee, $recipients),
+            eventType:  'TicketAssigned',
+            logContext:  ['ticket_id' => $event->ticket->id],
+        );
 
-        try {
-            Mail::to($toList)->send(
-                new TicketAssignedMail(
-                    $event->ticket,
-                    $event->newAssignee,
-                    $recipients,
-                )
-            );
-        } catch (\Throwable $e) {
-            Log::error('TicketAssigned email failed', [
-                'ticket_id'  => $event->ticket->id,
-                'recipients' => $recipients->pluck('email')->toArray(),
-                'error'      => $e->getMessage(),
-            ]);
-        }
     }
 
     public function failed(TicketAssigned $event, \Throwable $exception): void
