@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\TicketStatusChanged;
 use App\Listeners\Concerns\PreventsDuplicateNotification;
+use App\Listeners\Concerns\ReliableMailSender;
 use App\Mail\TicketStatusChangedMail;
 use App\Services\NotificationRecipientResolver;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Mail;
 class SendTicketStatusChangedEmail implements ShouldQueue
 {
     use PreventsDuplicateNotification;
+    use ReliableMailSender;
 
     public string $queue = 'emails';
     public int $tries = 3;
@@ -43,22 +45,12 @@ class SendTicketStatusChangedEmail implements ShouldQueue
             ->map(fn ($u) => ['email' => $u->email, 'name' => $u->name])
             ->toArray();
 
-        try {
-            Mail::to($toList)->send(
-                new TicketStatusChangedMail(
-                    $event->ticket,
-                    $event->oldStatus,
-                    $event->newStatus,
-                    $recipients,
-                )
-            );
-        } catch (\Throwable $e) {
-            Log::error('TicketStatusChanged email failed', [
-                'ticket_id'  => $event->ticket->id,
-                'recipients' => $recipients->pluck('email')->toArray(),
-                'error'      => $e->getMessage(),
-            ]);
-        }
+        $this->sendToEach(
+            recipients: $recipients,
+            mailable:   new TicketStatusChangedMail($event->ticket, $event->oldStatus, $event->newStatus, $recipients),
+            eventType:  'TicketStatusChanged',
+            logContext:  ['ticket_id' => $event->ticket->id],
+        );
     }
 
     public function failed(TicketStatusChanged $event, \Throwable $exception): void

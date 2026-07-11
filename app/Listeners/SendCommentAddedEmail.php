@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\CommentAdded;
 use App\Listeners\Concerns\PreventsDuplicateNotification;
+use App\Listeners\Concerns\ReliableMailSender;
 use App\Mail\CommentAddedMail;
 use App\Services\NotificationRecipientResolver;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Mail;
 class SendCommentAddedEmail implements ShouldQueue
 {
     use PreventsDuplicateNotification;
+    use ReliableMailSender;
 
     public string $queue = 'emails';
     public int $tries = 3;
@@ -39,26 +41,15 @@ class SendCommentAddedEmail implements ShouldQueue
             return;
         }
 
-        $toList = $recipients
-            ->map(fn ($u) => ['email' => $u->email, 'name' => $u->name])
-            ->toArray();
-
-        try {
-            Mail::to($toList)->send(
-                new CommentAddedMail(
-                    $event->ticket,
-                    $event->comment,
-                    $recipients,
-                )
-            );
-        } catch (\Throwable $e) {
-            Log::error('CommentAdded email failed', [
+        $this->sendToEach(
+            recipients: $recipients,
+            mailable:   new CommentAddedMail($event->ticket, $event->comment, $recipients),
+            eventType:  'CommentAdded',
+            logContext:  [
                 'ticket_id'  => $event->ticket->id,
                 'comment_id' => $event->comment->id,
-                'recipients' => $recipients->pluck('email')->toArray(),
-                'error'      => $e->getMessage(),
-            ]);
-        }
+            ],
+        );
     }
 
     public function failed(CommentAdded $event, \Throwable $exception): void
